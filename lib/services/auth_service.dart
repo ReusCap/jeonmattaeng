@@ -1,11 +1,13 @@
+// ✅ lib/services/auth_service.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/config/api_config.dart';
 import 'package:jeonmattaeng/services/kakao_login_service.dart';
 import 'package:jeonmattaeng/utils/secure_storage.dart';
+import 'package:jeonmattaeng/services/dio_client.dart';
 
 class AuthService {
-  static final Dio _dio = Dio();
+  static final Dio _dio = DioClient.dio;
 
   static Future<bool> loginWithKakao(BuildContext context) async {
     final token = await KakaoLoginService.login();

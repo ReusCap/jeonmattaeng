@@ -1,4 +1,4 @@
-// lib/main.dart
+// ✅ main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
@@ -8,15 +8,11 @@ import 'package:jeonmattaeng/pages/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 1) .env 읽어오기
   await dotenv.load(fileName: ".env");
 
-  // 2) Kakao SDK 초기화
   final kakaoKey = dotenv.env['KAKAO_NATIVE_APP_KEY']!;
   KakaoSdk.init(nativeAppKey: kakaoKey);
 
-  // 3) 기존 토큰 체크
   final token = await SecureStorage.getToken();
   runApp(MyApp(initialRoute: token == null ? '/login' : '/home'));
 }
