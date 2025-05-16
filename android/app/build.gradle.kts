@@ -40,6 +40,12 @@ android {
         }
     }
 }
+// android/app/build.gradle.kts (Kotlin DSL 예시)
+dependencies {
+    // …기존 구현들…
+
+    // 플러그인 1.6.0에 매핑되는 AAR 버전
+}
 
 flutter {
     source = "../.."

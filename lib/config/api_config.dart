@@ -1,8 +1,13 @@
-class ApiConfig {
-  static const baseUrl = 'http://localhost:3000'; // NestJS 서버 주소 (변경 가능)
+// lib/config/api_config.dart
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-  static String restaurants = '$baseUrl/restaurants';
-  static String menus(int restaurantId) => '$baseUrl/restaurants/$restaurantId/menus';
-  static String comments(int menuId) => '$baseUrl/menus/$menuId/comments';
-  static String kakaoLogin = '$baseUrl/auth/kakao';
+class ApiConfig {
+  // 반드시 dotenv.load() 이후에 접근!
+  static final _base = dotenv.env['BASE_URL']!;
+
+  static String get baseUrl => _base;
+  static String get restaurants => '$_base/restaurants';
+  static String menus(int id) => '$_base/restaurants/$id/menus';
+  static String comments(int menuId) => '$_base/menus/$menuId/comments';
+  static String get kakaoLogin => '$_base/auth/kakao';
 }
