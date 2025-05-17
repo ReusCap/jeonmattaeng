@@ -1,21 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
+import 'package:jeonmattaeng/services/dio_client.dart';
 import 'package:jeonmattaeng/config/api_config.dart';
 
 class MenuService {
-  static final Dio _dio = Dio();
+  static final Dio _dio = DioClient.dio; // ✅ 인터셉터 자동 적용
 
-  static Future<List<Menu>> fetchMenus(int restaurantId) async {
+  /// 식당 ID에 따른 메뉴 목록 불러오기
+  static Future<List<Menu>> getMenusByRestaurant(int restaurantId) async {
     try {
-      final response = await _dio.get('${ApiConfig.baseUrl}/restaurants/$restaurantId/menus');
+      final response = await _dio.get(ApiConfig.menus(restaurantId));
 
-      // TODO: 실제 API 구현 후 수정
       return (response.data as List)
           .map((json) => Menu.fromJson(json))
           .toList();
     } catch (e) {
-      print('[fetchMenus] Error: $e');
-      return [];
+      print('[MenuService] 메뉴 목록 불러오기 실패: $e');
+      rethrow;
     }
   }
 }

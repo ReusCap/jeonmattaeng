@@ -1,28 +1,25 @@
 class Menu {
   final int id;
   final String name;
-  final String rank;
-  final int likes;
+  final String description;
   final String imageUrl;
-  final String commentPreview;
+  final int likes;
 
   Menu({
     required this.id,
     required this.name,
-    required this.rank,
-    required this.likes,
+    required this.description,
     required this.imageUrl,
-    required this.commentPreview,
+    required this.likes,
   });
 
   factory Menu.fromJson(Map<String, dynamic> json) {
     return Menu(
       id: json['id'],
       name: json['name'],
-      rank: json['rank'] ?? '',
-      likes: json['likes'] ?? 0,
-      imageUrl: json['image_url'] ?? '',
-      commentPreview: json['comment_preview'] ?? '',
+      description: json['description'],
+      imageUrl: json['imageUrl'],
+      likes: json['likes'],
     );
   }
 }

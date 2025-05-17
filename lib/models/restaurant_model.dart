@@ -1,11 +1,13 @@
 class Restaurant {
   final int id;
   final String name;
+  final String category;
   final String imageUrl;
 
   Restaurant({
     required this.id,
     required this.name,
+    required this.category,
     required this.imageUrl,
   });
 
@@ -13,7 +15,8 @@ class Restaurant {
     return Restaurant(
       id: json['id'],
       name: json['name'],
-      imageUrl: json['image_url'] ?? '',
+      category: json['category'],
+      imageUrl: json['imageUrl'],
     );
   }
 }

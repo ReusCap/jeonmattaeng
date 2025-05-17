@@ -1,31 +1,35 @@
 import 'package:dio/dio.dart';
+import 'package:jeonmattaeng/models/comment_model.dart';
+import 'package:jeonmattaeng/services/dio_client.dart';
 import 'package:jeonmattaeng/config/api_config.dart';
 
 class CommentService {
-  static final Dio _dio = Dio();
+  static final Dio _dio = DioClient.dio; // ✅ 인터셉터 설정된 Dio
 
-  static Future<List<String>> fetchComments(int menuId) async {
+  /// 🔍 특정 메뉴의 댓글 리스트 불러오기
+  static Future<List<Comment>> getComments(int menuId) async {
     try {
-      final response = await _dio.get('${ApiConfig.baseUrl}/menus/$menuId/comments');
+      final response = await _dio.get(ApiConfig.comments(menuId));
 
-      // TODO: 실제 API 연동 후 response.data로 파싱
-      return (response.data as List).map((c) => c.toString()).toList();
+      return (response.data as List)
+          .map((json) => Comment.fromJson(json))
+          .toList();
     } catch (e) {
-      print('[fetchComments] Error: $e');
-      return [];
+      print('[CommentService] 댓글 불러오기 실패: $e');
+      rethrow;
     }
   }
 
-  static Future<bool> submitComment({required int menuId, required String comment}) async {
+  /// ✏️ 댓글 작성
+  static Future<void> postComment(int menuId, String content) async {
     try {
-      final response = await _dio.post(
-        '${ApiConfig.baseUrl}/menus/$menuId/comments',
-        data: {'content': comment},
+      await _dio.post(
+        ApiConfig.comments(menuId),
+        data: {'content': content},
       );
-      return response.statusCode == 201;
     } catch (e) {
-      print('[submitComment] Error: $e');
-      return false;
+      print('[CommentService] 댓글 등록 실패: $e');
+      rethrow;
     }
   }
 }

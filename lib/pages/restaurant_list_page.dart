@@ -1,38 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:jeonmattaeng/services/restaurant_service.dart';
-import 'package:jeonmattaeng/pages/menu_page.dart';
 import 'package:jeonmattaeng/models/restaurant_model.dart';
+import 'package:jeonmattaeng/services/restaurant_service.dart';
 
 class RestaurantListPage extends StatelessWidget {
+  const RestaurantListPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('맛집 리스트')),
+      appBar: AppBar(title: const Text('식당 리스트')),
       body: FutureBuilder<List<Restaurant>>(
-        future: RestaurantService.fetchRestaurants(),
+        future: RestaurantService.getAllRestaurants(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return Center(child: CircularProgressIndicator());
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty)
-            return Center(child: Text('식당이 없습니다'));
-
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final restaurants = snapshot.data!;
+
           return ListView.builder(
             itemCount: restaurants.length,
             itemBuilder: (context, index) {
-              final res = restaurants[index];
+              final r = restaurants[index];
               return ListTile(
-                leading: Image.network(res.imageUrl, width: 60),
-                title: Text(res.name),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MenuPage(restaurant: res),
-                    ),
-                  );
-                },
+                leading: Image.network(r.imageUrl, width: 50, height: 50, fit: BoxFit.cover),
+                title: Text(r.name),
+                subtitle: Text(r.category),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/menu',
+                  arguments: r, // 식당 객체 전달
+                ),
               );
             },
           );

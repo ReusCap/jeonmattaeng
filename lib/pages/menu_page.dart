@@ -1,45 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:jeonmattaeng/models/restaurant_model.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
-import 'package:jeonmattaeng/pages/comment_page.dart';
+import 'package:jeonmattaeng/models/restaurant_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
 
 class MenuPage extends StatelessWidget {
-  final Restaurant restaurant;
-  const MenuPage({required this.restaurant});
+  const MenuPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final restaurant = ModalRoute.of(context)!.settings.arguments as Restaurant;
+
     return Scaffold(
-      appBar: AppBar(title: Text(restaurant.name)),
+      appBar: AppBar(title: Text('${restaurant.name} 메뉴')),
       body: FutureBuilder<List<Menu>>(
-        future: MenuService.fetchMenus(restaurant.id),
+        future: MenuService.getMenusByRestaurant(restaurant.id),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return Center(child: CircularProgressIndicator());
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty)
-            return Center(child: Text('등록된 메뉴가 없습니다'));
-
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final menus = snapshot.data!;
+
           return ListView.builder(
             itemCount: menus.length,
             itemBuilder: (context, index) {
-              final menu = menus[index];
-              return ListTile(
-                leading: Image.network(menu.imageUrl, width: 80),
-                title: Text('${menu.rank}  ${menu.name}'),
-                subtitle: Text('${menu.likes} ❤ · ${menu.commentPreview}'),
-                trailing: TextButton(
-                  child: Text('후기 보기'),
-                  onPressed: () {
-                    Navigator.push(
+              final m = menus[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: ListTile(
+                  leading: Image.network(m.imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+                  title: Text(m.name),
+                  subtitle: Text('${m.likes} 좋아요\n${m.description}'),
+                  isThreeLine: true,
+                  trailing: TextButton(
+                    onPressed: () => Navigator.pushNamed(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => CommentPage(menu: menu),
-                      ),
-                    );
-                  },
+                      '/comment',
+                      arguments: m, // 메뉴 객체 전달
+                    ),
+                    child: const Text('후기 보기'),
+                  ),
                 ),
               );
             },
