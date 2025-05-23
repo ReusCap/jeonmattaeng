@@ -21,32 +21,52 @@ class AuthService {
     // 1. 카카오 SDK를 통해 로그인 시도 → access token 반환
     final token = await KakaoLoginService.login();
 
-    // 2. 실패 시 로그 출력 및 false 반환
     if (token == null) {
-      print('[AuthService] 카카오 로그인 실패');
+      print('[AuthService] ❌ 카카오 로그인 실패 (token == null)');
       return false;
     }
 
+    print('[AuthService] ✅ 카카오 로그인 성공. accessToken: ${token.accessToken}');
+
     try {
-      // 3. accessToken을 서버에 POST 요청으로 전달
+      print('[AuthService] 🔄 서버에 accessToken 전송 중...');
       final response = await _dio.post(
-        ApiConfig.kakaoLogin, // ex: http://서버주소/auth/kakao
-        data: {'accessToken': token.accessToken}, // Body에 토큰 포함
+        ApiConfig.kakaoLogin,
+        data: {'accessToken': token.accessToken},
       );
+      print('[AuthService] ✅ 서버 응답: ${response.data}');
 
-      // 4. 서버로부터 JWT 응답 받기
       final jwt = response.data['token'];
+      if (jwt == null) {
+        print('[AuthService] ❌ JWT 없음 (response에 token 키가 없음)');
+        return false;
+      }
 
-      // 5. secure storage에 JWT 저장
       await SecureStorage.saveToken(jwt);
+      print('[AuthService] ✅ JWT 저장 완료');
+      return true;
 
-      print('[AuthService] 서버에서 발급된 JWT: $jwt');
-
-      // 6. 로그인 성공 → true 반환
+    } catch (e) {
+      print('[AuthService] ❌ 서버 통신 실패: $e');
+      return false;
+    }
+  }
+  /// JWT 유효성 검증용 API 호출 (GET /auth/verify)
+  static Future<void> verifyJwt() async {
+    try {
+      final response = await _dio.get('${ApiConfig.baseUrl}/auth/verify');
+      print('[AuthService] ✅ JWT 검증 성공: ${response.data}');
+    } catch (e) {
+      print('[AuthService] ❌ JWT 검증 실패: $e');
+    }
+  }
+  static Future<bool> deleteAccount() async {
+    try {
+      final response = await _dio.delete('${ApiConfig.baseUrl}/user'); // 예시 경로
+      print('[AuthService] ✅ 회원 탈퇴 성공: ${response.statusCode}');
       return true;
     } catch (e) {
-      // 서버 통신 실패 로그 출력 후 false 반환
-      print('[AuthService] 서버 통신 실패: $e');
+      print('[AuthService] ❌ 회원 탈퇴 실패: $e');
       return false;
     }
   }

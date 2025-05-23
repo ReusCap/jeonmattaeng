@@ -1,24 +1,23 @@
-// 임시로 다 작성해둔것.
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
+import 'app_text_styles.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme => ThemeData(
-    useMaterial3: true, // 최신 머티리얼 디자인 사용
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-    scaffoldBackgroundColor: Colors.white,
-    fontFamily: 'Pretendard', // pubspec.yaml에 폰트 등록 시
-    textTheme: const TextTheme(
-      headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-      bodyMedium: TextStyle(fontSize: 16),
-    ),
-  );
+  static ThemeData get lightTheme {
+    return ThemeData(
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.background,
+      textTheme: const TextTheme(
+        displayLarge: AppTextStyles.headline1, // 기존 headline1
+        bodyLarge: AppTextStyles.body1,        // 기존 bodyText1
+        bodySmall: AppTextStyles.caption,      // 기존 caption
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      // 필요 시 버튼 테마, 아이콘 테마 등 추가
+    );
+  }
 }
-
-// 적용 예시
-// Text('제목입니다', style: Theme.of(context).textTheme.headlineLarge),
-/*
-Container(
-  color: Theme.of(context).colorScheme.primary,
-)
- */

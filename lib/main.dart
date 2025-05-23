@@ -11,10 +11,9 @@ import 'package:jeonmattaeng/utils/secure_storage.dart';
 import 'package:jeonmattaeng/pages/login_page.dart';
 // 홈 페이지
 import 'package:jeonmattaeng/pages/main_tab_page.dart';
-import 'package:jeonmattaeng/pages/menu_page.dart';
-import 'package:jeonmattaeng/pages/comment_page.dart';
-// 테마 설정 (글꼴, 색상 등)
-import 'package:jeonmattaeng/theme/app_theme.dart';
+
+import 'package:jeonmattaeng/services/auth_service.dart';
+import 'package:jeonmattaeng/constants/routes.dart';
 
 /// 앱 실행 전 필요한 비동기 초기화 로직
 Future<void> main() async {
@@ -32,9 +31,13 @@ Future<void> main() async {
 
   // 보안 저장소에서 JWT 토큰 가져오기
   final token = await SecureStorage.getToken();
+  if (token != null) {
+    await AuthService.verifyJwt(); // 여기!
+  }
+  print('[DEBUG] 저장된 JWT: $token');
 
   // 로그인 여부에 따라 초기 페이지 결정: 토큰 없으면 로그인, 있으면 홈
-  runApp(MyApp(initialRoute: token == null ? '/login' : '/home'));
+  runApp(MyApp(initialRoute: token == null ? AppRoutes.login : AppRoutes.main));
 }
 
 /// 앱의 루트 위젯 (StatelessWidget은 상태 없는 위젯)
@@ -50,12 +53,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, // 디버그 배너 제거
       initialRoute: initialRoute, // 초기 진입 페이지 지정
       routes: {
-        '/login': (_) => const LoginPage(),
-        '/main': (_) => const MainTabPage(), // 바뀜
-        '/menu': (_) => const MenuPage(),
-        '/comment': (_) => const CommentPage(),
+        AppRoutes.login: (_) => const LoginPage(),
+        AppRoutes.main: (_) => const MainTabPage(),
       },
-      // 추후 theme: AppTheme.lightTheme 도 여기 추가 가능
     );
   }
 }
