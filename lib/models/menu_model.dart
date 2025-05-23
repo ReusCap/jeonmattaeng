@@ -1,35 +1,46 @@
-// lib/models/menu_model.dart
 class Menu {
-  final int id;
+  final String id;
   final String name;
   final int price;
   final String image;
-  final String description;
+  final List<String> reviews;
   final int likeCount;
-  final int reviewCount;
-  final bool isLiked;
+  final bool liked; // 사용자가 좋아요 눌렀는지 여부
 
   Menu({
     required this.id,
     required this.name,
     required this.price,
     required this.image,
-    required this.description,
+    required this.reviews,
     required this.likeCount,
-    required this.reviewCount,
-    required this.isLiked,
+    required this.liked,
   });
 
   factory Menu.fromJson(Map<String, dynamic> json) {
     return Menu(
-      id: json['_id'] is int ? json['_id'] : 0,
-      name: json['name'] ?? '',
-      price: json['price'] ?? 0,
-      image: json['image'] ?? '',
-      description: json['description'] ?? '',
-      likeCount: json['likeCount'] ?? 0,
-      reviewCount: (json['reviews'] as List?)?.length ?? 0,
-      isLiked: (json['likedUsers'] as List?)?.isNotEmpty ?? false,
+      id: json['_id'],
+      name: json['name'],
+      price: json['price'],
+      image: json['image'],
+      reviews: List<String>.from(json['reviews']),
+      likeCount: json['likeCount'],
+      liked: json['liked'] ?? false, // 백엔드가 제공하면 사용
+    );
+  }
+
+  Menu copyWith({
+    int? likeCount,
+    bool? liked,
+  }) {
+    return Menu(
+      id: id,
+      name: name,
+      price: price,
+      image: image,
+      reviews: reviews,
+      likeCount: likeCount ?? this.likeCount,
+      liked: liked ?? this.liked,
     );
   }
 }

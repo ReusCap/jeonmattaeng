@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'restaurant_list_page.dart';
+import 'store_list_page.dart';
 import 'map_page.dart';
 import 'mypage.dart';
 
@@ -14,7 +14,7 @@ class _MainTabPageState extends State<MainTabPage> {
   int _selectedIndex = 0; // ✅ 기본 탭: 리스트 페이지
 
   final List<Widget> _pages = const [
-    RestaurantListPage(), // 리스트
+    StoreListPage(), // 리스트
     MapPage(),             // 지도
     MyPage(),              // 마이페이지
   ];

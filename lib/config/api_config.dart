@@ -10,15 +10,15 @@ class ApiConfig {
 
   // ✅ Menu
   static String menu(int id) => '$_base/menu/$id';
-  static String likeMenu(int id) => '$_base/menu/$id/like';
-  static String unlikeMenu(int id) => '$_base/menu/$id/unlike';
+  static String likeMenu(String id) => '$_base/menu/$id/like';
+  static String unlikeMenu(String id) => '$_base/menu/$id/unlike';
 
   // ✅ User
   static String get updateNickname => '$_base/user/nickname';
 
   // ✅ Store
-  static String get restaurants => '$_base/stores';
-  static String menus(int storeId) => '$_base/stores/$storeId/menus';
+  static String get stores => '$_base/stores';
+  static String menus(String storeId) => '$_base/stores/$storeId/menus';
 
   // ⚠️ Comment (임시 유지)
   static String comments(int menuId) => '$_base/menus/$menuId/comments';

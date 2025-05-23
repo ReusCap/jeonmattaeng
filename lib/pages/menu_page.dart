@@ -1,156 +1,200 @@
-/*import 'package:flutter/material.dart';
-import 'package:jeonmattaeng/models/restaurant_model.dart';
+import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
 
 class MenuPage extends StatefulWidget {
-  final Restaurant restaurant;
-  final List<Menu> menus;
+  final String storeId;
+  final String storeName;
+  final String storeCategory;
+  final String storeImage;
+  final int storeLikeCount;
+  final String storeLocation;
 
-  const MenuPage({super.key, required this.restaurant, required this.menus});
+  const MenuPage({
+    super.key,
+    required this.storeId,
+    required this.storeName,
+    required this.storeCategory,
+    required this.storeImage,
+    required this.storeLikeCount,
+    required this.storeLocation,
+  });
 
   @override
   State<MenuPage> createState() => _MenuPageState();
 }
 
 class _MenuPageState extends State<MenuPage> {
-  late List<Menu> _menus;
+  late Future<List<Menu>> _menusFuture;
+  List<Menu> _menus = [];
 
   @override
   void initState() {
     super.initState();
-    _menus = List.from(widget.menus);
+    _menusFuture = MenuService.getMenusByStore(widget.storeId);
+    _menusFuture.then((menus) {
+      setState(() {
+        _menus = menus;
+      });
+    });
   }
 
   void _toggleLike(Menu menu) async {
-    final updatedMenus = List<Menu>.from(_menus);
-    final index = updatedMenus.indexWhere((m) => m.id == menu.id);
+    final isLiked = menu.liked;
+    final newMenu = menu.copyWith(
+      liked: !isLiked,
+      likeCount: isLiked ? menu.likeCount - 1 : menu.likeCount + 1,
+    );
 
-    if (index != -1) {
-      final oldMenu = updatedMenus[index];
+    setState(() {
+      _menus = _menus.map((m) => m.id == menu.id ? newMenu : m).toList();
+    });
 
-      try {
-        if (oldMenu.isLiked) {
-          await MenuService.unlikeMenu(oldMenu.id);
-          updatedMenus[index] = Menu(
-            id: oldMenu.id,
-            name: oldMenu.name,
-            price: oldMenu.price,
-            image: oldMenu.image,
-            description: oldMenu.description,
-            likeCount: oldMenu.likeCount - 1,
-            reviewCount: oldMenu.reviewCount,
-            isLiked: false,
-          );
-        } else {
-          await MenuService.likeMenu(oldMenu.id);
-          updatedMenus[index] = Menu(
-            id: oldMenu.id,
-            name: oldMenu.name,
-            price: oldMenu.price,
-            image: oldMenu.image,
-            description: oldMenu.description,
-            likeCount: oldMenu.likeCount + 1,
-            reviewCount: oldMenu.reviewCount,
-            isLiked: true,
-          );
-        }
-
-        setState(() {
-          _menus = updatedMenus;
-        });
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('좋아요 처리 중 오류가 발생했습니다.')),
-        );
+    try {
+      if (isLiked) {
+        await MenuService.unlikeMenu(menu.id);
+      } else {
+        await MenuService.likeMenu(menu.id);
       }
+    } catch (_) {
+      // 실패 시 롤백
+      setState(() {
+        _menus = _menus.map((m) => m.id == menu.id ? menu : m).toList();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('좋아요 변경 실패')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final top3 = [..._menus]..sort((a, b) => b.likeCount.compareTo(a.likeCount));
-    final topMenus = top3.take(3).toList();
-
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ✅ 상단 대표 이미지
-            Stack(
-              children: [
-                Image.network(widget.restaurant.image, width: double.infinity, height: 200, fit: BoxFit.cover),
-                Positioned(
-                  top: 40,
-                  left: 16,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+      body: FutureBuilder<List<Menu>>(
+        future: _menusFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError || _menus.isEmpty) {
+            return const Center(child: Text('메뉴를 불러올 수 없습니다.'));
+          }
+
+          final topMenus = _menus.take(3).toList();
+          final restMenus = _menus.skip(3).toList();
+
+          return ListView(
+            children: [
+              // 상단: 가게 이미지
+              Image.network(widget.storeImage, height: 200, fit: BoxFit.cover),
+
+              // 가게 정보
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.storeName,
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(widget.storeCategory),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.favorite, size: 16, color: Colors.pink),
+                        const SizedBox(width: 4),
+                        Text(widget.storeLikeCount.toString()),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Text('주소: ',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(widget.storeLocation),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-
-            // ✅ 식당 정보
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.restaurant.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text(widget.restaurant.foodCategory, style: const TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  Text("📍 ${widget.restaurant.location}"),
-                  Text("📬 ${widget.restaurant.address}"),
-                ],
               ),
-            ),
 
-            // ✅ 인기 메뉴 TOP3
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text('인기 메뉴 TOP3', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-            Column(
-              children: List.generate(topMenus.length, (index) {
-                final menu = topMenus[index];
-                return ListTile(
-                  leading: Stack(
-                    alignment: Alignment.topLeft,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(menu.image, width: 60, height: 60, fit: BoxFit.cover),
+              // 인기 TOP3
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text('인기 메뉴 TOP3',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              SizedBox(
+                height: 160,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: topMenus.length,
+                  itemBuilder: (context, index) {
+                    final menu = topMenus[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              menu.image,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Text('인기 ${index + 1}위',
+                              style: const TextStyle(
+                                  color: Colors.green, fontWeight: FontWeight.bold)),
+                          Text(menu.name, style: const TextStyle(fontSize: 14)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.favorite, size: 14, color: Colors.pink),
+                              const SizedBox(width: 4),
+                              Text(menu.likeCount.toString()),
+                            ],
+                          ),
+                        ],
                       ),
-                      CircleAvatar(
-                        radius: 12,
-                        backgroundColor: Colors.amber,
-                        child: Text('${index + 1}', style: const TextStyle(fontSize: 12, color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                  title: Text(menu.name),
-                  subtitle: Text(menu.description, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: Row(
+                    );
+                  },
+                ),
+              ),
+
+              // 전체 메뉴
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text('메인 메뉴',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              ...restMenus.map((menu) => ListTile(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(menu.image,
+                      width: 50, height: 50, fit: BoxFit.cover),
+                ),
+                title: Text(menu.name),
+                subtitle: Text('${menu.price} 원'),
+                trailing: InkWell(
+                  onTap: () => _toggleLike(menu),
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('${menu.likeCount}'),
-                      IconButton(
-                        icon: Icon(menu.isLiked ? Icons.favorite : Icons.favorite_border, color: Colors.red),
-                        onPressed: () => _toggleLike(menu),
-                      ),
+                      Icon(menu.liked ? Icons.favorite : Icons.favorite_border,
+                          color: menu.liked ? Colors.pink : Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(menu.likeCount.toString()),
                     ],
                   ),
-                );
-              }),
-            ),
-
-            // ✅ TODO: 일반 메뉴 출력 예정
-          ],
-        ),
+                ),
+              )),
+            ],
+          );
+        },
       ),
     );
   }
 }
-*/

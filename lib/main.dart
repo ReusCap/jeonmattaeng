@@ -11,7 +11,7 @@ import 'package:jeonmattaeng/utils/secure_storage.dart';
 import 'package:jeonmattaeng/pages/login_page.dart';
 // 홈 페이지
 import 'package:jeonmattaeng/pages/main_tab_page.dart';
-
+import 'package:jeonmattaeng/pages/splash_page.dart';
 import 'package:jeonmattaeng/services/auth_service.dart';
 import 'package:jeonmattaeng/constants/routes.dart';
 
@@ -51,8 +51,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '전맛탱', // 앱 이름
       debugShowCheckedModeBanner: false, // 디버그 배너 제거
-      initialRoute: initialRoute, // 초기 진입 페이지 지정
+      initialRoute: AppRoutes.splash, // splash로 변경
       routes: {
+        AppRoutes.splash: (_) => const SplashPage(), // 추가
         AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.main: (_) => const MainTabPage(),
       },

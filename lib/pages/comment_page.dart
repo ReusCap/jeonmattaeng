@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/models/comment_model.dart';
@@ -82,3 +83,4 @@ class _CommentPageState extends State<CommentPage> {
     );
   }
 }
+*/
