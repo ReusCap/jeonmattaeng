@@ -62,7 +62,7 @@ class AuthService {
   }
   static Future<bool> deleteAccount() async {
     try {
-      final response = await _dio.delete('${ApiConfig.baseUrl}/user'); // 예시 경로
+      final response = await DioClient.dio.delete(ApiConfig.deleteAccount);
       print('[AuthService] ✅ 회원 탈퇴 성공: ${response.statusCode}');
       return true;
     } catch (e) {

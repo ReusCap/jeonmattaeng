@@ -15,7 +15,7 @@ class _MainTabPageState extends State<MainTabPage> {
 
   final List<Widget> _pages = const [
     StoreListPage(), // 리스트
-    MapPage(),             // 지도
+    //MapPage(),             // 지도
     MyPage(),              // 마이페이지
   ];
 
@@ -28,10 +28,10 @@ class _MainTabPageState extends State<MainTabPage> {
         onTap: (index) => setState(() => _selectedIndex = index),
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey,
-        backgroundColor: const Color(0xFFF9F6EC),
+        backgroundColor: const Color(0xFFFFFFFF),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.list), label: '리스트'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: '지도'),
+          //BottomNavigationBarItem(icon: Icon(Icons.map), label: '지도'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: '마이페이지'),
         ],
       ),

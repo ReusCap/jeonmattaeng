@@ -15,6 +15,7 @@ class ApiConfig {
 
   // ✅ User
   static String get updateNickname => '$_base/user/nickname';
+  static String get deleteAccount => '$_base/users/me';
 
   // ✅ Store
   static String get stores => '$_base/stores';
