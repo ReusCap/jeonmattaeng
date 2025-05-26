@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'store_list_page.dart';
 import 'map_page.dart';
 import 'mypage.dart';
+import 'package:jeonmattaeng/theme/app_colors.dart';
 
 class MainTabPage extends StatefulWidget {
   const MainTabPage({super.key});

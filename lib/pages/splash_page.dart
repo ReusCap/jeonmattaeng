@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/constants/routes.dart';
 import 'package:jeonmattaeng/services/auth_service.dart';
 import 'package:jeonmattaeng/utils/secure_storage.dart';
+import 'package:jeonmattaeng/theme/app_colors.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -32,7 +33,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFA4CBA2),
+      backgroundColor: AppColors.background,
       body: Center(
         child: Image.asset(
           'assets/전맛탱아이콘.png',

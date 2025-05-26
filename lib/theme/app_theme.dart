@@ -6,18 +6,20 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: AppColors.background,
-      textTheme: const TextTheme(
-        displayLarge: AppTextStyles.headline1, // 기존 headline1
-        bodyLarge: AppTextStyles.body1,        // 기존 bodyText1
-        bodySmall: AppTextStyles.caption,      // 기존 caption
-      ),
+      scaffoldBackgroundColor: Colors.white,
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0.5,
+        titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
       ),
-      // 필요 시 버튼 테마, 아이콘 테마 등 추가
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        bodyLarge: TextStyle(fontSize: 16),
+        bodySmall: TextStyle(fontSize: 12, color: Colors.grey),
+      ),
+      iconTheme: const IconThemeData(color: Colors.grey),
     );
   }
 }
+

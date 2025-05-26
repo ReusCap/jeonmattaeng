@@ -57,7 +57,6 @@ class _MenuPageState extends State<MenuPage> {
         await MenuService.likeMenu(menu.id);
       }
     } catch (_) {
-      // 실패 시 롤백
       setState(() {
         _menus = _menus.map((m) => m.id == menu.id ? menu : m).toList();
       });
@@ -82,12 +81,32 @@ class _MenuPageState extends State<MenuPage> {
           }
 
           final topMenus = _menus.take(3).toList();
-          final restMenus = _menus.skip(3).toList();
+          final allMenus = _menus;
 
           return ListView(
             children: [
-              // 상단: 가게 이미지
-              Image.network(widget.storeImage, height: 200, fit: BoxFit.cover),
+              // 가게 이미지 + 뒤로가기 버튼
+              Stack(
+                children: [
+                  Image.network(
+                    widget.storeImage,
+                    height: MediaQuery.of(context).size.height / 6,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned(
+                    top: 40,
+                    left: 16,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black45,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  )
+                ],
+              ),
 
               // 가게 정보
               Padding(
@@ -95,10 +114,19 @@ class _MenuPageState extends State<MenuPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.storeName,
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text(widget.storeCategory),
+                    Row(
+                      children: [
+                        Text(
+                          widget.storeName,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.storeCategory,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -110,23 +138,21 @@ class _MenuPageState extends State<MenuPage> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Text('주소: ',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(widget.storeLocation),
+                        const Text('주소: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Expanded(child: Text(widget.storeLocation)),
                       ],
                     ),
                   ],
                 ),
               ),
 
-              // 인기 TOP3
+              // 인기 메뉴 TOP3
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('인기 메뉴 TOP3',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('인기 메뉴 TOP3', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               SizedBox(
-                height: 160,
+                height: 170,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: topMenus.length,
@@ -145,9 +171,9 @@ class _MenuPageState extends State<MenuPage> {
                               fit: BoxFit.cover,
                             ),
                           ),
+                          const SizedBox(height: 4),
                           Text('인기 ${index + 1}위',
-                              style: const TextStyle(
-                                  color: Colors.green, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                           Text(menu.name, style: const TextStyle(fontSize: 14)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -164,19 +190,35 @@ class _MenuPageState extends State<MenuPage> {
                 ),
               ),
 
-              // 전체 메뉴
+              // 메인 메뉴
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('메인 메뉴',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('메인 메뉴', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-              ...restMenus.map((menu) => ListTile(
+              ...allMenus.map((menu) => ListTile(
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(menu.image,
                       width: 50, height: 50, fit: BoxFit.cover),
                 ),
-                title: Text(menu.name),
+                title: Row(
+                  children: [
+                    Text(menu.name),
+                    const SizedBox(width: 8),
+                    if (topMenus.contains(menu))
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '인기 ${topMenus.indexOf(menu) + 1}위',
+                          style: const TextStyle(fontSize: 10, color: Colors.green),
+                        ),
+                      ),
+                  ],
+                ),
                 subtitle: Text('${menu.price} 원'),
                 trailing: InkWell(
                   onTap: () => _toggleLike(menu),

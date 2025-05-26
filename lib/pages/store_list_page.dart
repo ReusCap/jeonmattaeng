@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/store_model.dart';
 import 'package:jeonmattaeng/services/store_service.dart';
+import 'package:jeonmattaeng/theme/app_colors.dart';
+import 'package:jeonmattaeng/pages/menu_page.dart';
 
 class StoreListPage extends StatefulWidget {
   const StoreListPage({super.key});
@@ -75,7 +77,7 @@ class _StoreListPageState extends State<StoreListPage> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: Colors.pink,
+            color: AppColors.accentRed,
           ),
         ),
         actions: [
@@ -116,54 +118,71 @@ class _StoreListPageState extends State<StoreListPage> {
               ),
               const SizedBox(height: 4),
 
-              ...stores.map((store) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 좌측 텍스트 정보
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            store.name,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            store.foodCategory,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.favorite, size: 16, color: Colors.pink),
-                              const SizedBox(width: 4),
-                              Text(store.likeSum.toString()),
-                            ],
-                          ),
-                        ],
+              ...stores.map((store) => InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MenuPage(
+                        storeId: store.id,
+                        storeName: store.name,
+                        storeCategory: store.foodCategory,
+                        storeImage: store.image,
+                        storeLikeCount: store.likeSum,
+                        storeLocation: store.location,
                       ),
                     ),
-
-                    // 썸네일
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        store.image,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.store),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 좌측 텍스트 정보
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              store.name,
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              store.foodCategory,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.favorite, size: 16, color: Colors.pink),
+                                const SizedBox(width: 4),
+                                Text(store.likeSum.toString()),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+
+                      // 썸네일
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          store.image,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.store),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               )),
             ],
