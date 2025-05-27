@@ -36,6 +36,7 @@ class AppTextStyles {
     fontFamily: 'Pretendard',
   );
 }
+
 /*
 Text('전맛탱', style: AppTextStyles.appTitle);
 Text('삼겹살 김치찌개', style: AppTextStyles.menuTitle);

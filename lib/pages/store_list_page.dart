@@ -77,7 +77,7 @@ class _StoreListPageState extends State<StoreListPage> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: AppColors.accentRed,
+            color: AppColors.heartRed,
           ),
         ),
         actions: [

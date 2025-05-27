@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
+import 'package:jeonmattaeng/theme/app_colors.dart';
 
 class MenuPage extends StatefulWidget {
   final String storeId;
@@ -130,7 +131,7 @@ class _MenuPageState extends State<MenuPage> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.favorite, size: 16, color: Colors.pink),
+                        const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
                         const SizedBox(width: 4),
                         Text(widget.storeLikeCount.toString()),
                       ],
@@ -173,7 +174,7 @@ class _MenuPageState extends State<MenuPage> {
                           ),
                           const SizedBox(height: 4),
                           Text('인기 ${index + 1}위',
-                              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(color: AppColors.categroyGray, fontWeight: FontWeight.bold)),
                           Text(menu.name, style: const TextStyle(fontSize: 14)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,

@@ -33,7 +33,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.splashGreen,
       body: Center(
         child: Image.asset(
           'assets/image/전맛탱아이콘.png',
