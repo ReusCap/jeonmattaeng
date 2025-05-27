@@ -19,7 +19,7 @@ class LoginPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
-                  'assets/전맛탱말풍선아이콘.png',
+                  'assets/image/전맛탱로그인화면로고.png',
                   width: 120,
                 ),
                 const SizedBox(height: 16),
@@ -57,7 +57,7 @@ class LoginPage extends StatelessWidget {
                     }
                   },
                   child: Image.asset(
-                    'assets/kakao_login.png',
+                    'assets/image/카카오로그인버튼.png',
                     width: 250,
                   ),
                 ),

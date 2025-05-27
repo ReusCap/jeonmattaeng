@@ -36,7 +36,7 @@ class _SplashPageState extends State<SplashPage> {
       backgroundColor: AppColors.background,
       body: Center(
         child: Image.asset(
-          'assets/전맛탱아이콘.png',
+          'assets/image/전맛탱아이콘.png',
           width: 120,
         ),
       ),
