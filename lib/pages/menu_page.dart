@@ -30,6 +30,8 @@ class _MenuPageState extends State<MenuPage> {
   late Future<List<Menu>> _menusFuture;
   List<Menu> _menus = [];
 
+  static const String fallbackImageAsset = 'assets/image/이미지없음표시.png';
+
   @override
   void initState() {
     super.initState();
@@ -161,12 +163,9 @@ class _MenuPageState extends State<MenuPage> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  menu.image,
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: menu.image.isNotEmpty
+                                    ? Image.network(menu.image, width: 100, height: 100, fit: BoxFit.cover)
+                                    : Image.asset(fallbackImageAsset, width: 100, height: 100, fit: BoxFit.cover),
                               ),
                               Positioned(
                                 top: 6,
@@ -209,8 +208,9 @@ class _MenuPageState extends State<MenuPage> {
               ...allMenus.map((menu) => ListTile(
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(menu.image,
-                      width: 50, height: 50, fit: BoxFit.cover),
+                  child: menu.image.isNotEmpty
+                      ? Image.network(menu.image, width: 50, height: 50, fit: BoxFit.cover)
+                      : Image.asset(fallbackImageAsset, width: 50, height: 50, fit: BoxFit.cover),
                 ),
                 title: Text(menu.name, style: AppTextStyles.settingOption),
                 subtitle: Text('${menu.price} 원', style: AppTextStyles.detailInfo),
