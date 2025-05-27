@@ -5,17 +5,35 @@ import 'dio_client.dart';
 
 class MenuService {
   static Future<List<Menu>> getMenusByStore(String storeId) async {
-    final response = await DioClient.dio.get(ApiConfig.menus(storeId));
-    return (response.data as List)
-        .map((json) => Menu.fromJson(json))
-        .toList();
+    try {
+      final response = await DioClient.dio.get(ApiConfig.menus(storeId));
+      print('[MenuService] 메뉴 목록 불러오기 성공 (${response.statusCode})');
+      return (response.data as List)
+          .map((json) => Menu.fromJson(json))
+          .toList();
+    } catch (e) {
+      print('[MenuService] 메뉴 목록 불러오기 실패: $e');
+      rethrow;
+    }
   }
 
   static Future<void> likeMenu(String id) async {
-    await DioClient.dio.post(ApiConfig.likeMenu(id));
+    try {
+      final response = await DioClient.dio.post(ApiConfig.likeMenu(id));
+      print('[MenuService] 좋아요 성공 (${response.statusCode}) for menuId: $id');
+    } catch (e) {
+      print('[MenuService] 좋아요 실패 for menuId: $id, 오류: $e');
+      rethrow;
+    }
   }
 
   static Future<void> unlikeMenu(String id) async {
-    await DioClient.dio.delete(ApiConfig.unlikeMenu(id));
+    try {
+      final response = await DioClient.dio.delete(ApiConfig.unlikeMenu(id));
+      print('[MenuService] 좋아요 취소 성공 (${response.statusCode}) for menuId: $id');
+    } catch (e) {
+      print('[MenuService] 좋아요 취소 실패 for menuId: $id, 오류: $e');
+      rethrow;
+    }
   }
 }

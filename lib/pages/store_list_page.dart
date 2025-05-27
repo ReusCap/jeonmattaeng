@@ -3,6 +3,7 @@ import 'package:jeonmattaeng/models/store_model.dart';
 import 'package:jeonmattaeng/services/store_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/pages/menu_page.dart';
+import 'package:jeonmattaeng/theme/app_text_styles.dart';
 
 class StoreListPage extends StatefulWidget {
   const StoreListPage({super.key});
@@ -44,16 +45,13 @@ class _StoreListPageState extends State<StoreListPage> {
 
   List<Store> get _filteredStores {
     if (_searchQuery.isEmpty) return _stores;
-    return _stores
-        .where((store) => store.name.contains(_searchQuery))
-        .toList();
+    return _stores.where((store) => store.name.contains(_searchQuery)).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -74,11 +72,7 @@ class _StoreListPageState extends State<StoreListPage> {
         )
             : const Text(
           '전맛탱',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: AppColors.heartRed,
-          ),
+          style: AppTextStyles.appTitle,
         ),
         actions: [
           IconButton(
@@ -93,7 +87,6 @@ class _StoreListPageState extends State<StoreListPage> {
           ),
         ],
       ),
-
       body: FutureBuilder<List<Store>>(
         future: _storeFuture,
         builder: (context, snapshot) {
@@ -107,18 +100,22 @@ class _StoreListPageState extends State<StoreListPage> {
 
           final stores = _filteredStores;
 
-          return ListView(
-            children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  '가게 리스트',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 4),
+          return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 20),
+            itemCount: stores.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    '가게 리스트',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                );
+              }
 
-              ...stores.map((store) => InkWell(
+              final store = stores[index - 1];
+              return InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
@@ -135,37 +132,28 @@ class _StoreListPageState extends State<StoreListPage> {
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 좌측 텍스트 정보
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              store.name,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                            ),
+                            Text(store.name, style: AppTextStyles.menuTitle),
                             const SizedBox(height: 4),
-                            Text(
-                              store.foodCategory,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
+                            Text(store.foodCategory, style: AppTextStyles.bestMenuName.copyWith(color: AppColors.categroyGray)),
                             const SizedBox(height: 4),
                             Row(
                               children: [
                                 const Icon(Icons.favorite, size: 16, color: Colors.pink),
                                 const SizedBox(width: 4),
-                                Text(store.likeSum.toString()),
+                                Text(store.likeSum.toString(), style: AppTextStyles.detailInfo),
                               ],
                             ),
                           ],
                         ),
                       ),
-
-                      // 썸네일
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
@@ -184,8 +172,8 @@ class _StoreListPageState extends State<StoreListPage> {
                     ],
                   ),
                 ),
-              )),
-            ],
+              );
+            },
           );
         },
       ),

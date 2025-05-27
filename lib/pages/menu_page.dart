@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
+import 'package:jeonmattaeng/theme/app_text_styles.dart';
 
 class MenuPage extends StatefulWidget {
   final String storeId;
@@ -86,7 +87,6 @@ class _MenuPageState extends State<MenuPage> {
 
           return ListView(
             children: [
-              // 가게 이미지 + 뒤로가기 버튼
               Stack(
                 children: [
                   Image.network(
@@ -108,8 +108,6 @@ class _MenuPageState extends State<MenuPage> {
                   )
                 ],
               ),
-
-              // 가게 정보
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -117,15 +115,10 @@ class _MenuPageState extends State<MenuPage> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          widget.storeName,
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
+                        Text(widget.storeName, style: AppTextStyles.menuTitle),
                         const SizedBox(width: 8),
-                        Text(
-                          widget.storeCategory,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
+                        Text(widget.storeCategory,
+                            style: AppTextStyles.bestMenuName.copyWith(color: AppColors.categroyGray)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -133,11 +126,12 @@ class _MenuPageState extends State<MenuPage> {
                       children: [
                         const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
                         const SizedBox(width: 4),
-                        Text(widget.storeLikeCount.toString()),
+                        Text(widget.storeLikeCount.toString(), style: AppTextStyles.detailInfo),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('주소: ', style: TextStyle(fontWeight: FontWeight.bold)),
                         Expanded(child: Text(widget.storeLocation)),
@@ -147,41 +141,58 @@ class _MenuPageState extends State<MenuPage> {
                 ),
               ),
 
-              // 인기 메뉴 TOP3
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('인기 메뉴 TOP3', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('인기 메뉴 TOP3', style: AppTextStyles.menuTitle),
               ),
               SizedBox(
-                height: 170,
+                height: 190,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: topMenus.length,
                   itemBuilder: (context, index) {
                     final menu = topMenus[index];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              menu.image,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  menu.image,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 6,
+                                left: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '인기 ${index + 1}위',
+                                    style: const TextStyle(fontSize: 10, color: Colors.green),
+                                  ),
+                                ),
+                              )
+                            ],
                           ),
                           const SizedBox(height: 4),
-                          Text('인기 ${index + 1}위',
-                              style: const TextStyle(color: AppColors.categroyGray, fontWeight: FontWeight.bold)),
-                          Text(menu.name, style: const TextStyle(fontSize: 14)),
+                          Text(menu.name, style: AppTextStyles.bestMenuName),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(Icons.favorite, size: 14, color: Colors.pink),
                               const SizedBox(width: 4),
-                              Text(menu.likeCount.toString()),
+                              Text(menu.likeCount.toString(), style: AppTextStyles.detailInfo),
                             ],
                           ),
                         ],
@@ -191,10 +202,9 @@ class _MenuPageState extends State<MenuPage> {
                 ),
               ),
 
-              // 메인 메뉴
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('메인 메뉴', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('메인 메뉴', style: AppTextStyles.menuTitle),
               ),
               ...allMenus.map((menu) => ListTile(
                 leading: ClipRRect(
@@ -202,34 +212,19 @@ class _MenuPageState extends State<MenuPage> {
                   child: Image.network(menu.image,
                       width: 50, height: 50, fit: BoxFit.cover),
                 ),
-                title: Row(
-                  children: [
-                    Text(menu.name),
-                    const SizedBox(width: 8),
-                    if (topMenus.contains(menu))
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '인기 ${topMenus.indexOf(menu) + 1}위',
-                          style: const TextStyle(fontSize: 10, color: Colors.green),
-                        ),
-                      ),
-                  ],
-                ),
-                subtitle: Text('${menu.price} 원'),
+                title: Text(menu.name, style: AppTextStyles.settingOption),
+                subtitle: Text('${menu.price} 원', style: AppTextStyles.detailInfo),
                 trailing: InkWell(
                   onTap: () => _toggleLike(menu),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(menu.liked ? Icons.favorite : Icons.favorite_border,
-                          color: menu.liked ? Colors.pink : Colors.grey),
+                      Icon(
+                        menu.liked ? Icons.favorite : Icons.favorite_border,
+                        color: menu.liked ? AppColors.heartRed : Colors.grey,
+                      ),
                       const SizedBox(width: 4),
-                      Text(menu.likeCount.toString()),
+                      Text(menu.likeCount.toString(), style: AppTextStyles.detailInfo),
                     ],
                   ),
                 ),
