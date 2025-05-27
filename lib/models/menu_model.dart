@@ -17,13 +17,15 @@ class Menu {
 
   /// JSON → Menu (null 방지 처리 포함)
   factory Menu.fromJson(Map<String, dynamic> json) {
+    print('[MenuModel] heart: ${json['heart']} → liked: ${json['heart'] == true || json['heart']?.toString() == 'true'}');
+
     return Menu(
       id: json['_id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       price: json['price'] is int ? json['price'] : int.tryParse(json['price'].toString()) ?? 0,
       image: json['image']?.toString() ?? '',
       likeCount: json['likeCount'] is int ? json['likeCount'] : int.tryParse(json['likeCount'].toString()) ?? 0,
-      liked: json['heart'].toString() == 'true', // ✅ 문자열 "true" → bool 변환
+      liked: json['heart'] == true || json['heart']?.toString() == 'true',
     );
   }
 

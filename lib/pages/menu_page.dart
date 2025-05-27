@@ -3,6 +3,7 @@ import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
+import 'package:jeonmattaeng/main.dart'; // routeObserver 접근
 
 class MenuPage extends StatefulWidget {
   final String storeId;
@@ -26,7 +27,7 @@ class MenuPage extends StatefulWidget {
   State<MenuPage> createState() => _MenuPageState();
 }
 
-class _MenuPageState extends State<MenuPage> {
+class _MenuPageState extends State<MenuPage> with RouteAware {
   late Future<List<Menu>> _menusFuture;
   List<Menu> _menus = [];
 
@@ -35,12 +36,33 @@ class _MenuPageState extends State<MenuPage> {
   @override
   void initState() {
     super.initState();
+    _fetchMenus();
+  }
+
+  void _fetchMenus() {
     _menusFuture = MenuService.getMenusByStore(widget.storeId);
     _menusFuture.then((menus) {
       setState(() {
         _menus = menus;
       });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    _fetchMenus(); // 뒤로 왔다가 다시 들어왔을 때 새로고침
   }
 
   void _toggleLike(Menu menu) async {

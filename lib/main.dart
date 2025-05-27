@@ -15,6 +15,8 @@ import 'package:jeonmattaeng/pages/splash_page.dart';
 import 'package:jeonmattaeng/services/auth_service.dart';
 import 'package:jeonmattaeng/constants/routes.dart';
 
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 /// 앱 실행 전 필요한 비동기 초기화 로직
 Future<void> main() async {
   // Flutter 엔진과 위젯 시스템 초기화
@@ -57,6 +59,8 @@ class MyApp extends StatelessWidget {
         AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.main: (_) => const MainTabPage(),
       },
+      // 추가
+      navigatorObservers: [routeObserver],
     );
   }
 }
