@@ -1,3 +1,4 @@
+// lib/config/api_config.dart
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
@@ -15,7 +16,7 @@ class ApiConfig {
 
   // ✅ User
   static String get updateNickname => '$_base/user/nickname';
-  static String get deleteAccount => '$_base/users/me';
+  static String get deleteAccount => '$_base/user/me';
 
   // ✅ Store
   static String get stores => '$_base/stores';

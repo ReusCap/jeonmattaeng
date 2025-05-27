@@ -60,6 +60,7 @@ class AuthService {
       print('[AuthService] ❌ JWT 검증 실패: $e');
     }
   }
+  /// 회원 탈퇴
   static Future<bool> deleteAccount() async {
     try {
       final response = await DioClient.dio.delete(ApiConfig.deleteAccount);
