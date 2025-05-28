@@ -1,3 +1,4 @@
+// 수정된 StoreListPage
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/store_model.dart';
 import 'package:jeonmattaeng/services/store_service.dart';
@@ -21,6 +22,10 @@ class _StoreListPageState extends State<StoreListPage> {
   @override
   void initState() {
     super.initState();
+    _loadStores();
+  }
+
+  void _loadStores() {
     _storeFuture = StoreService.fetchStores();
     _storeFuture.then((data) {
       setState(() {
@@ -116,8 +121,8 @@ class _StoreListPageState extends State<StoreListPage> {
 
               final store = stores[index - 1];
               return InkWell(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final updated = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => MenuPage(
@@ -130,6 +135,10 @@ class _StoreListPageState extends State<StoreListPage> {
                       ),
                     ),
                   );
+
+                  if (updated == true) {
+                    _loadStores(); // ✅ 좋아요 변경되었으면 가게 목록 다시 로드
+                  }
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -142,7 +151,8 @@ class _StoreListPageState extends State<StoreListPage> {
                           children: [
                             Text(store.name, style: AppTextStyles.menuTitle),
                             const SizedBox(height: 4),
-                            Text(store.foodCategory, style: AppTextStyles.bestMenuName.copyWith(color: AppColors.categroyGray)),
+                            Text(store.foodCategory,
+                                style: AppTextStyles.bestMenuName.copyWith(color: AppColors.categroyGray)),
                             const SizedBox(height: 4),
                             Row(
                               children: [
