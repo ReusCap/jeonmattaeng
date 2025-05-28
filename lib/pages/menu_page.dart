@@ -1,4 +1,4 @@
-// 수정된 MenuPage
+// 개선된 MenuPage (누적 하트 실시간 반영)
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
@@ -32,12 +32,14 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
   late Future<List<Menu>> _menusFuture;
   List<Menu> _menus = [];
   bool _didLikeChange = false;
+  late int _storeLikeCount;
 
   static const String fallbackImageAsset = 'assets/image/이미지없음표시.png';
 
   @override
   void initState() {
     super.initState();
+    _storeLikeCount = widget.storeLikeCount;
     _fetchMenus();
   }
 
@@ -76,6 +78,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
 
     setState(() {
       _menus = _menus.map((m) => m.id == menu.id ? newMenu : m).toList();
+      _storeLikeCount += isLiked ? -1 : 1; // ✅ 누적 하트 반영
       _didLikeChange = true;
     });
 
@@ -88,7 +91,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     } catch (_) {
       setState(() {
         _menus = _menus.map((m) => m.id == menu.id ? menu : m).toList();
-        _didLikeChange = true;
+        _storeLikeCount += isLiked ? 1 : -1; // 롤백
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('좋아요 변경 실패')),
@@ -168,7 +171,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                         children: [
                           const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
                           const SizedBox(width: 4),
-                          Text(widget.storeLikeCount.toString(), style: AppTextStyles.detailInfo),
+                          Text(_storeLikeCount.toString(), style: AppTextStyles.detailInfo),
                         ],
                       ),
                       const SizedBox(height: 8),
