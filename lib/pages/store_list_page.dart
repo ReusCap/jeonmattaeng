@@ -77,7 +77,7 @@ class _StoreListPageState extends State<StoreListPage> {
             : Text(
           '전맛탱',
           style: AppTextStyles.title20SemiBold.copyWith(
-            color: AppColors.heartRed, // ❤️ 브랜드 타이틀 강조
+            color: AppColors.heartRed,
           ),
         ),
         actions: [
@@ -115,7 +115,7 @@ class _StoreListPageState extends State<StoreListPage> {
                   padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Text(
                     '가게 리스트',
-                    style: AppTextStyles.subtitle18SemiBold, // 📝 서브타이틀 스타일
+                    style: AppTextStyles.subtitle18SemiBold,
                   ),
                 );
               }
@@ -138,7 +138,7 @@ class _StoreListPageState extends State<StoreListPage> {
                   );
 
                   if (updated == true) {
-                    _loadStores(); // ✅ 좋아요 변경되었으면 가게 목록 다시 로드
+                    _loadStores();
                   }
                 },
                 child: Padding(
@@ -150,18 +150,28 @@ class _StoreListPageState extends State<StoreListPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              store.name,
-                              style: AppTextStyles.title20SemiBold, // 🍽️ 가게 이름
+                            // ✅ 첫 줄: 가게 이름 + 카테고리
+                            Row(
+                              children: [
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 200),
+                                  child: Text(
+                                    store.name,
+                                    style: AppTextStyles.title20SemiBold,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  store.foodCategory,
+                                  style: AppTextStyles.body16Regular.copyWith(
+                                    color: AppColors.categroyGray,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              store.foodCategory,
-                              style: AppTextStyles.body16Regular.copyWith(
-                                color: AppColors.categroyGray, // 🍱 카테고리 색상
-                              ),
-                            ),
-                            const SizedBox(height: 4),
+                            // 두 번째 줄: 좋아요 수
                             Row(
                               children: [
                                 const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
@@ -169,7 +179,7 @@ class _StoreListPageState extends State<StoreListPage> {
                                 Text(
                                   store.likeSum.toString(),
                                   style: AppTextStyles.caption10Medium.copyWith(
-                                    color: AppColors.heartRed, // ❤️ 하트 강조
+                                    color: AppColors.heartRed,
                                   ),
                                 ),
                               ],
@@ -177,6 +187,7 @@ class _StoreListPageState extends State<StoreListPage> {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
@@ -195,6 +206,7 @@ class _StoreListPageState extends State<StoreListPage> {
                     ],
                   ),
                 ),
+
               );
             },
           );
