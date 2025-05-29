@@ -10,6 +10,7 @@ class MyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // ✅ 새하얀 배경 고정
       appBar: AppBar(
         centerTitle: true, // ✅ 제목 가운데 정렬
         title: Text('마이페이지', style: AppTextStyles.title20SemiBold),
