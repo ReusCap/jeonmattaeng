@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   static const black = Color(0xFF000000);
 
-  static const kakaoGreen = Color(0xFF388E3C);     // 진초록
+  static const kakaoGreen = Color(0xFF2F5B44);     // 진초록
   static const splashGreen = Color(0xFFA0CD9A);  // 연초록 (스플래시 배경 등)
 
   static const heartRed = Color(0xFFF8486E);   // 강조 빨강 (하트, 포인트)

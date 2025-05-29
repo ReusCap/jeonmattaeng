@@ -160,10 +160,10 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                     children: [
                       Row(
                         children: [
-                          Text(widget.storeName, style: AppTextStyles.menuTitle),
+                          Text(widget.storeName, style: AppTextStyles.title24Bold),
                           const SizedBox(width: 8),
                           Text(widget.storeCategory,
-                              style: AppTextStyles.bestMenuName.copyWith(color: AppColors.categroyGray)),
+                              style: AppTextStyles.body16Regular.copyWith(color: AppColors.categroyGray)),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -171,7 +171,10 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                         children: [
                           const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
                           const SizedBox(width: 4),
-                          Text(_storeLikeCount.toString(), style: AppTextStyles.detailInfo),
+                          Text(
+                            _storeLikeCount.toString(),
+                            style: AppTextStyles.caption10Medium.copyWith(color: AppColors.heartRed),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -187,7 +190,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('인기 메뉴 TOP3', style: AppTextStyles.menuTitle),
+                  child: Text('인기 메뉴 TOP3', style: AppTextStyles.subtitle18SemiBold),
                 ),
                 SizedBox(
                   height: 190,
@@ -227,13 +230,13 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text(menu.name, style: AppTextStyles.bestMenuName),
+                            Text(menu.name, style: AppTextStyles.body16Regular),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(Icons.favorite, size: 14, color: Colors.pink),
                                 const SizedBox(width: 4),
-                                Text(menu.likeCount.toString(), style: AppTextStyles.detailInfo),
+                                Text(menu.likeCount.toString(), style: AppTextStyles.caption10Medium),
                               ],
                             ),
                           ],
@@ -244,7 +247,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('메인 메뉴', style: AppTextStyles.menuTitle),
+                  child: Text('메인 메뉴', style: AppTextStyles.subtitle18SemiBold),
                 ),
                 ...allMenus.map((menu) => ListTile(
                   leading: ClipRRect(
@@ -253,8 +256,8 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                         ? Image.network(menu.image, width: 50, height: 50, fit: BoxFit.cover)
                         : Image.asset(fallbackImageAsset, width: 50, height: 50, fit: BoxFit.cover),
                   ),
-                  title: Text(menu.name, style: AppTextStyles.settingOption),
-                  subtitle: Text('${menu.price} 원', style: AppTextStyles.detailInfo),
+                  title: Text(menu.name, style: AppTextStyles.title20SemiBold),
+                  subtitle: Text('${menu.price} 원', style: AppTextStyles.body16Regular),
                   trailing: InkWell(
                     onTap: () => _toggleLike(menu),
                     child: Row(
@@ -265,7 +268,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                           color: menu.liked ? AppColors.heartRed : Colors.grey,
                         ),
                         const SizedBox(width: 4),
-                        Text(menu.likeCount.toString(), style: AppTextStyles.detailInfo),
+                        Text(menu.likeCount.toString(), style: AppTextStyles.body16Regular),
                       ],
                     ),
                   ),

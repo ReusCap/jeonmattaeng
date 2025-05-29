@@ -1,4 +1,3 @@
-// 수정된 StoreListPage
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/store_model.dart';
 import 'package:jeonmattaeng/services/store_service.dart';
@@ -75,9 +74,11 @@ class _StoreListPageState extends State<StoreListPage> {
             });
           },
         )
-            : const Text(
+            : Text(
           '전맛탱',
-          style: AppTextStyles.appTitle,
+          style: AppTextStyles.title20SemiBold.copyWith(
+            color: AppColors.heartRed, // ❤️ 브랜드 타이틀 강조
+          ),
         ),
         actions: [
           IconButton(
@@ -114,7 +115,7 @@ class _StoreListPageState extends State<StoreListPage> {
                   padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Text(
                     '가게 리스트',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.subtitle18SemiBold, // 📝 서브타이틀 스타일
                   ),
                 );
               }
@@ -149,16 +150,28 @@ class _StoreListPageState extends State<StoreListPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(store.name, style: AppTextStyles.menuTitle),
+                            Text(
+                              store.name,
+                              style: AppTextStyles.title20SemiBold, // 🍽️ 가게 이름
+                            ),
                             const SizedBox(height: 4),
-                            Text(store.foodCategory,
-                                style: AppTextStyles.bestMenuName.copyWith(color: AppColors.categroyGray)),
+                            Text(
+                              store.foodCategory,
+                              style: AppTextStyles.body16Regular.copyWith(
+                                color: AppColors.categroyGray, // 🍱 카테고리 색상
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.favorite, size: 16, color: Colors.pink),
+                                const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
                                 const SizedBox(width: 4),
-                                Text(store.likeSum.toString(), style: AppTextStyles.detailInfo),
+                                Text(
+                                  store.likeSum.toString(),
+                                  style: AppTextStyles.caption10Medium.copyWith(
+                                    color: AppColors.heartRed, // ❤️ 하트 강조
+                                  ),
+                                ),
                               ],
                             ),
                           ],

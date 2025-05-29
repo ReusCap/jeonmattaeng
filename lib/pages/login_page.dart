@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/services/auth_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
+import 'package:jeonmattaeng/theme/app_text_styles.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -23,12 +24,10 @@ class LoginPage extends StatelessWidget {
                   width: 120,
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   '전맛탱',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F4023),
+                  style: AppTextStyles.display.copyWith(
+                    color: AppColors.kakaoGreen, // ✅ 진초록 적용
                   ),
                 ),
               ],

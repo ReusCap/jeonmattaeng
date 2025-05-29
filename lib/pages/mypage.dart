@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/services/auth_service.dart';
 import 'package:jeonmattaeng/utils/secure_storage.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
+import 'package:jeonmattaeng/theme/app_text_styles.dart';
 
 class MyPage extends StatelessWidget {
   const MyPage({super.key});
@@ -11,10 +12,7 @@ class MyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true, // ✅ 제목 가운데 정렬
-        title: const Text(
-          '마이페이지',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text('마이페이지', style: AppTextStyles.title20SemiBold),
         elevation: 0.5,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -22,7 +20,7 @@ class MyPage extends StatelessWidget {
       body: ListView(
         children: [
           ListTile(
-            title: const Text('로그아웃'),
+            title: Text('로그아웃', style: AppTextStyles.body16Regular),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final confirm = await showDialog<bool>(
@@ -46,7 +44,7 @@ class MyPage extends StatelessWidget {
           const Divider(height: 1),
 
           ListTile(
-            title: const Text('회원탈퇴'),
+            title: Text('회원탈퇴', style: AppTextStyles.body16Regular),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final confirm = await showDialog<bool>(
