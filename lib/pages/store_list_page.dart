@@ -133,6 +133,7 @@ class _StoreListPageState extends State<StoreListPage> {
                         storeImage: store.image,
                         storeLikeCount: store.likeSum,
                         storeLocation: store.location,
+                        storeLocationCategory: store.locationCategory,
                       ),
                     ),
                   );
