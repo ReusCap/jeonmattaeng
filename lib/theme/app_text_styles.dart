@@ -45,14 +45,14 @@ class AppTextStyles {
 
   /// Caption (10pt, Medium)
   static const TextStyle caption10Medium = TextStyle(
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: FontWeight.w500, // Medium
     fontFamily: 'Pretendard',
   );
 
   /// Button Text (11pt, Bold)
   static const TextStyle button11Bold = TextStyle(
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: FontWeight.w700, // Bold
     fontFamily: 'Pretendard',
   );
