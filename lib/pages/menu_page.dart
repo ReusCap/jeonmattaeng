@@ -1,4 +1,3 @@
-// 개선된 MenuPage (디자인 반영 + 팝업 + 위치정보 포함)
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
@@ -37,7 +36,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
   late int _storeLikeCount;
   bool _showPopup = true;
 
-  static const String fallbackImageAsset = 'assets/image/\uC774\uBBF8\uC9C0\uC5C6\uC74C\uD45C\uC2DC.png';
+  static const String fallbackImageAsset = 'assets/image/이미지없음표시.png';
 
   @override
   void initState() {
@@ -51,7 +50,10 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
 
   void _fetchMenus() {
     _menusFuture = MenuService.getMenusByStore(widget.storeId);
-    _menusFuture.then((menus) => setState(() => _menus = menus));
+    _menusFuture.then((menus) {
+      if (!mounted) return;
+      setState(() => _menus = menus);
+    });
   }
 
   @override
@@ -83,8 +85,11 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     });
 
     try {
-      isLiked ? await MenuService.unlikeMenu(menu.id) : await MenuService.likeMenu(menu.id);
+      isLiked
+          ? await MenuService.unlikeMenu(menu.id)
+          : await MenuService.likeMenu(menu.id);
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _menus = _menus.map((m) => m.id == menu.id ? menu : m).toList();
         _storeLikeCount += isLiked ? 1 : -1;
@@ -97,10 +102,12 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context, _didLikeChange);
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (!didPop) {
+          Navigator.pop(context, _didLikeChange);
+        }
       },
       child: Scaffold(
         body: Stack(
@@ -168,7 +175,6 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          // ✅ 분류 & 주소 (같은 폰트, 위아래 정렬)
                           Text('분류: ${widget.storeLocationCategory}',
                               style: AppTextStyles.body16Regular.copyWith(color: Colors.black54)),
                           const SizedBox(height: 2),
@@ -193,16 +199,11 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: menu.image.isNotEmpty
-                                          ? Image.network(menu.image, width: 100, height: 100, fit: BoxFit.cover)
-                                          : Image.asset(fallbackImageAsset,
-                                          width: 100, height: 100, fit: BoxFit.cover),
-                                    ),
-                                  ],
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: menu.image.isNotEmpty
+                                      ? Image.network(menu.image, width: 100, height: 100, fit: BoxFit.cover)
+                                      : Image.asset(fallbackImageAsset, width: 100, height: 100, fit: BoxFit.cover),
                                 ),
                                 const SizedBox(height: 4),
                                 Container(
@@ -239,11 +240,10 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                         borderRadius: BorderRadius.circular(8),
                         child: menu.image.isNotEmpty
                             ? Image.network(menu.image, width: 50, height: 50, fit: BoxFit.cover)
-                            : Image.asset(fallbackImageAsset,
-                            width: 50, height: 50, fit: BoxFit.cover),
+                            : Image.asset(fallbackImageAsset, width: 50, height: 50, fit: BoxFit.cover),
                       ),
                       title: Text(menu.name, style: AppTextStyles.title20SemiBold),
-                      subtitle: Text('${menu.price} \uC6D0', style: AppTextStyles.body16Regular),
+                      subtitle: Text('${menu.price} 원', style: AppTextStyles.body16Regular),
                       trailing: InkWell(
                         onTap: () => _toggleLike(menu),
                         child: Row(
@@ -277,10 +277,10 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                        const BoxShadow(
+                          color: Color.fromRGBO(0, 0, 0, 0.2), // replaced deprecated withOpacity
                           blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          offset: Offset(0, 4),
                         ),
                       ],
                     ),
