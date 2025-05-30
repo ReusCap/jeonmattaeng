@@ -35,6 +35,8 @@ migrate_working_dir/
 
 #추가
 .env
+/android/key.properties
+/android/app/upload-keystore.jks
 
 # Symbolication related
 app.*.symbols
