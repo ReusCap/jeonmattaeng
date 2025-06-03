@@ -110,6 +110,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
         }
       },
       child: Scaffold(
+        backgroundColor: Colors.white,
         body: Stack(
           children: [
             FutureBuilder<List<Menu>>(
