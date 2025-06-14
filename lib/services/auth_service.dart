@@ -18,18 +18,16 @@ class AuthService {
 
   /// 카카오 로그인 → 서버 인증 → JWT 저장 까지를 처리하는 함수
   static Future<bool> loginWithKakao(BuildContext context) async {
-    // 1. 카카오 SDK를 통해 로그인 시도 → access token 반환
     final token = await KakaoLoginService.login();
 
     if (token == null) {
       print('[AuthService] ❌ 카카오 로그인 실패 (token == null)');
-      return false;
+      throw Exception('카카오 로그인 실패 (token 없음)');
     }
 
-    print('[AuthService] ✅ 카카오 로그인 성공. accessToken: ${token.accessToken}');
+    print('[AuthService] ✅ accessToken: ${token.accessToken}');
 
     try {
-      print('[AuthService] 🔄 서버에 accessToken 전송 중...');
       final response = await _dio.post(
         ApiConfig.kakaoLogin,
         data: {'accessToken': token.accessToken},
@@ -38,17 +36,14 @@ class AuthService {
 
       final jwt = response.data['token'];
       if (jwt == null) {
-        print('[AuthService] ❌ JWT 없음 (response에 token 키가 없음)');
-        return false;
+        throw Exception('JWT 토큰 없음 (백엔드 응답 오류)');
       }
 
       await SecureStorage.saveToken(jwt);
-      print('[AuthService] ✅ JWT 저장 완료');
       return true;
-
     } catch (e) {
       print('[AuthService] ❌ 서버 통신 실패: $e');
-      return false;
+      throw Exception('서버 인증 실패: $e');
     }
   }
   /// JWT 유효성 검증용 API 호출 (GET /auth/verify)

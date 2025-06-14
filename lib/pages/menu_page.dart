@@ -110,7 +110,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         body: Stack(
           children: [
             FutureBuilder<List<Menu>>(
@@ -140,9 +140,9 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                           top: 40,
                           left: 16,
                           child: CircleAvatar(
-                            backgroundColor: Colors.black45,
+                            backgroundColor: AppColors.black45,
                             child: IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                              icon: const Icon(Icons.arrow_back, color: AppColors.white),
                               onPressed: () => Navigator.pop(context, _didLikeChange),
                             ),
                           ),
@@ -160,7 +160,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                               const SizedBox(width: 8),
                               Text(
                                 widget.storeCategory,
-                                style: AppTextStyles.body16Regular.copyWith(color: AppColors.categroyGray),
+                                style: AppTextStyles.body16Regular.copyWith(color: AppColors.categoryGrey),
                               ),
                             ],
                           ),
@@ -177,10 +177,10 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                           ),
                           const SizedBox(height: 8),
                           Text('분류: ${widget.storeLocationCategory}',
-                              style: AppTextStyles.body16Regular.copyWith(color: Colors.black54)),
+                              style: AppTextStyles.body16Regular.copyWith(color: AppColors.black54)),
                           const SizedBox(height: 2),
                           Text('주소: ${widget.storeLocation}',
-                              style: AppTextStyles.body16Regular.copyWith(color: Colors.black54)),
+                              style: AppTextStyles.body16Regular.copyWith(color: AppColors.black54)),
                         ],
                       ),
                     ),
@@ -210,18 +210,18 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.shade100,
+                                    color: AppColors.lightteal,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text('인기 ${index + 1}위',
-                                      style: const TextStyle(fontSize: 10, color: Colors.green)),
+                                      style: const TextStyle(fontSize: 10, color: AppColors.darkgreen)),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(menu.name, style: AppTextStyles.body16Regular),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.favorite, size: 14, color: Colors.pink),
+                                    const Icon(Icons.favorite, size: 14, color: AppColors.heartRed),
                                     const SizedBox(width: 4),
                                     Text(menu.likeCount.toString(), style: AppTextStyles.caption10Medium),
                                   ],
@@ -252,7 +252,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                           children: [
                             Icon(
                               menu.liked ? Icons.favorite : Icons.favorite_border,
-                              color: menu.liked ? AppColors.heartRed : Colors.grey,
+                              color: menu.liked ? AppColors.heartRed : AppColors.categoryGrey,
                             ),
                             const SizedBox(width: 4),
                             Text(menu.likeCount.toString(), style: AppTextStyles.body16Regular),
@@ -275,11 +275,11 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         const BoxShadow(
-                          color: Color.fromRGBO(0, 0, 0, 0.2), // replaced deprecated withOpacity
+                          color: AppColors.shadowBlack20, // replaced deprecated withOpacity
                           blurRadius: 10,
                           offset: Offset(0, 4),
                         ),
@@ -287,7 +287,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                     ),
                     child: const Text(
                       '좋아요를 누르면 인기메뉴 선정에 반영돼요!',
-                      style: TextStyle(color: Colors.black, fontSize: 14),
+                      style: TextStyle(color: AppColors.black, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                   ),

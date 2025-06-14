@@ -55,10 +55,10 @@ class _StoreListPageState extends State<StoreListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
         elevation: 0.5,
         centerTitle: true,
         title: _isSearching
@@ -166,7 +166,7 @@ class _StoreListPageState extends State<StoreListPage> {
                                 Text(
                                   store.foodCategory,
                                   style: AppTextStyles.body16Regular.copyWith(
-                                    color: AppColors.categroyGray,
+                                    color: AppColors.categoryGrey,
                                   ),
                                 ),
                               ],
@@ -199,7 +199,7 @@ class _StoreListPageState extends State<StoreListPage> {
                           errorBuilder: (context, error, stackTrace) => Container(
                             width: 60,
                             height: 60,
-                            color: Colors.grey[300],
+                            color: AppColors.unclickgrey,
                             child: const Icon(Icons.store),
                           ),
                         ),

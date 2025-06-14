@@ -9,7 +9,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
 
       body: Stack(
         children: [
@@ -40,18 +40,22 @@ class LoginPage extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 150.0),
               child: Material(
-                color: Colors.transparent,
+                color: AppColors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () async {
-                    final success = await AuthService.loginWithKakao(context);
-                    if (success) {
-                      Navigator.pushReplacementNamed(context, '/main');
-                    } else {
+                    try {
+                      final success = await AuthService.loginWithKakao(context);
+                      if (success) {
+                        Navigator.pushReplacementNamed(context, '/main');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('로그인에 실패했습니다. 다시 시도해주세요.')),
+                        );
+                      }
+                    } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('로그인에 실패했습니다. 다시 시도해주세요.'),
-                        ),
+                        SnackBar(content: Text('로그인 중 오류 발생: $e')),
                       );
                     }
                   },
