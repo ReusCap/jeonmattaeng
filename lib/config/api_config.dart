@@ -24,6 +24,6 @@ class ApiConfig {
   static String unlikeMenu(String menuId) => '$_base/menus/$menuId/unlike';
 
   // --- Review ---
-  static String reviewsByMenu(String menuId) => '$_base/menus/$menuId/reviews';
-  static String deleteReview(String reviewId) => '$_base/menus/reviews/$reviewId';
+  static String reviewsByMenu(String menuId) => '$_base/menu/$menuId/reviews';
+  static String deleteReview(String reviewId) => '$_base/menu/reviews/$reviewId';
 }

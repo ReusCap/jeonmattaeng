@@ -1,6 +1,6 @@
-// lib/pages/menu_page.dart (최종 수정본)
+// lib/pages/menu_page.dart (최종 통일본)
 
-import 'dart:developer'; // debugPrint 사용
+import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
@@ -36,7 +36,7 @@ class MenuPage extends StatefulWidget {
 
 class _MenuPageState extends State<MenuPage> with RouteAware {
   late Future<List<Menu>> _menusFuture;
-  List<Menu>? _menus; // ✅ 상태 변수 추가: 메뉴 데이터를 여기에 저장합니다.
+  List<Menu>? _menus;
   bool _didLikeChange = false;
   late int _storeLikeCount;
   bool _showPopup = true;
@@ -55,6 +55,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
 
   void _fetchMenus() {
     setState(() {
+      _menus = null;
       _menusFuture = MenuService.getMenusByStore(widget.storeId);
     });
   }
@@ -74,10 +75,8 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
   @override
   void didPopNext() => _fetchMenus();
 
-  // ✅ 상태 관리 로직 개선
   void _toggleLike(Menu menuToUpdate) async {
     if (_menus == null) return;
-
     final int menuIndex = _menus!.indexWhere((m) => m.id == menuToUpdate.id);
     if (menuIndex == -1) return;
 
@@ -89,25 +88,20 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
       likeCount: isLiked ? originalMenu.likeCount - 1 : originalMenu.likeCount + 1,
     );
 
-    // 1. 낙관적 UI 업데이트
     setState(() {
       _menus![menuIndex] = updatedMenu;
       _storeLikeCount += isLiked ? -1 : 1;
       _didLikeChange = true;
     });
 
-    // 2. API 호출
     try {
-      if (isLiked) {
-        await MenuService.unlikeMenu(originalMenu.id);
-      } else {
-        await MenuService.likeMenu(originalMenu.id);
-      }
+      isLiked
+          ? await MenuService.unlikeMenu(originalMenu.id)
+          : await MenuService.likeMenu(originalMenu.id);
     } catch (e) {
-      // ✅ 3. 실패 시 에러 출력 및 UI 롤백
       debugPrint('❌ MenuPage 좋아요 실패: $e');
       setState(() {
-        _menus![menuIndex] = originalMenu; // 원래 메뉴로 상태 복구
+        _menus![menuIndex] = originalMenu;
         _storeLikeCount += isLiked ? 1 : -1;
         _didLikeChange = false;
       });
@@ -118,8 +112,8 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     }
   }
 
+  // 가게 정보 UI
   Widget _buildStoreInfo() {
-    // ... 기존 코드와 동일 ...
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -159,8 +153,8 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     );
   }
 
+  // 인기 메뉴 섹션 UI
   Widget _buildTopMenusSection(List<Menu> menus) {
-    // ... 기존 코드와 동일 ...
     if (menus.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     final topMenus = menus.take(3).toList();
@@ -176,38 +170,51 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
             height: 190,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               itemCount: topMenus.length,
               itemBuilder: (context, index) {
                 final menu = topMenus[index];
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-                  child: Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _buildCachedImage(menu.image, 100, 100),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                            color: AppColors.lightteal,
-                            borderRadius: BorderRadius.circular(12)),
-                        child: Text('인기 ${index + 1}위',
-                            style: const TextStyle(
-                                fontSize: 10, color: AppColors.darkgreen)),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(menu.name, style: AppTextStyles.body16Regular),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.favorite, size: 14, color: AppColors.heartRed),
-                          const SizedBox(width: 4),
-                          Text(menu.likeCount.toString(), style: AppTextStyles.caption10Medium),
-                        ],
-                      ),
-                    ],
+                return GestureDetector(
+                  onTap: () async {
+                    _navigateToReviewPage(
+                      menu: menu,
+                      // ✅ 인기 메뉴이므로 순위 정보를 전달합니다.
+                      rank: index + 1,
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: _buildCachedImage(menu.image, 100, 100),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                              color: AppColors.lightteal,
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Text('인기 ${index + 1}위',
+                              style: const TextStyle(
+                                  fontSize: 10, color: AppColors.darkgreen)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(menu.name, style: AppTextStyles.body16Regular),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.favorite,
+                                size: 14, color: AppColors.heartRed),
+                            const SizedBox(width: 4),
+                            Text(menu.likeCount.toString(),
+                                style: AppTextStyles.caption10Medium),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -218,31 +225,19 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     );
   }
 
+  // 메인 메뉴 리스트 UI
   Widget _buildMainMenuList(List<Menu> menus) {
-    // ... 기존 코드와 동일 (setStateCallback 파라미터만 제거) ...
     return SliverList(
       delegate: SliverChildBuilderDelegate(
             (context, index) {
           final menu = menus[index];
           return InkWell(
-            onTap: () async { // ✅ ReviewPage에서 돌아왔을 때 상태 업데이트 로직 추가
-              final result = await Navigator.push<Menu>(
-                context,
-                MaterialPageRoute(builder: (context) => ReviewPage(menu: menu)),
+            onTap: () async {
+              _navigateToReviewPage(
+                menu: menu,
+                // ✅ 메인 메뉴는 순위 정보가 없으므로 null 전달
+                rank: null,
               );
-              if (result != null && _menus != null) {
-                final int menuIndex = _menus!.indexWhere((m) => m.id == result.id);
-                if (menuIndex != -1) {
-                  setState(() {
-                    final originalMenu = _menus![menuIndex];
-                    if(originalMenu.liked != result.liked) {
-                      _storeLikeCount += result.liked ? 1 : -1;
-                      _didLikeChange = true;
-                    }
-                    _menus![menuIndex] = result;
-                  });
-                }
-              }
             },
             child: ListTile(
               leading: ClipRRect(
@@ -250,18 +245,22 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                 child: _buildCachedImage(menu.image, 50, 50),
               ),
               title: Text(menu.name, style: AppTextStyles.title20SemiBold),
-              subtitle: Text('${menu.price} 원', style: AppTextStyles.body16Regular),
+              subtitle:
+              Text('${menu.price} 원', style: AppTextStyles.body16Regular),
               trailing: InkWell(
-                onTap: () => _toggleLike(menu), // ✅ setStateCallback 제거
+                onTap: () => _toggleLike(menu),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       menu.liked ? Icons.favorite : Icons.favorite_border,
-                      color: menu.liked ? AppColors.heartRed : AppColors.categoryGrey,
+                      color: menu.liked
+                          ? AppColors.heartRed
+                          : AppColors.categoryGrey,
                     ),
                     const SizedBox(width: 4),
-                    Text(menu.likeCount.toString(), style: AppTextStyles.body16Regular),
+                    Text(menu.likeCount.toString(),
+                        style: AppTextStyles.body16Regular),
                   ],
                 ),
               ),
@@ -273,8 +272,8 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     );
   }
 
+  // 이미지 캐싱 위젯
   Widget _buildCachedImage(String imageUrl, double width, double height) {
-    // ... 기존 코드와 동일 ...
     return CachedNetworkImage(
       imageUrl: imageUrl,
       width: width,
@@ -294,6 +293,34 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     );
   }
 
+  // ReviewPage로 이동하고, 돌아왔을 때 상태를 업데이트하는 함수
+  void _navigateToReviewPage({required Menu menu, required int? rank}) async {
+    final result = await Navigator.push<Menu>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReviewPage(
+          menu: menu,
+          storeName: widget.storeName,
+          rank: rank,
+        ),
+      ),
+    );
+
+    if (result != null && _menus != null) {
+      final int menuIndex = _menus!.indexWhere((m) => m.id == result.id);
+      if (menuIndex != -1) {
+        setState(() {
+          final originalMenu = _menus![menuIndex];
+          if (originalMenu.liked != result.liked) {
+            _storeLikeCount += result.liked ? 1 : -1;
+            _didLikeChange = true;
+          }
+          _menus![menuIndex] = result;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -308,18 +335,19 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
             CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  expandedHeight: MediaQuery.of(context).size.height / 6,
+                  expandedHeight: MediaQuery.of(context).size.height / 5,
                   pinned: true,
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.black45,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.white),
-                      onPressed: () => Navigator.pop(context, _didLikeChange),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: AppColors.white),
+                    onPressed: () => Navigator.pop(context, _didLikeChange),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.black45,
                     ),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
-                      background: _buildCachedImage(widget.storeImage, double.infinity, MediaQuery.of(context).size.height / 6)
-                  ),
+                      background: _buildCachedImage(widget.storeImage,
+                          double.infinity,
+                          MediaQuery.of(context).size.height / 5)),
                 ),
                 _buildStoreInfo(),
                 FutureBuilder<List<Menu>>(
@@ -327,39 +355,38 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SliverToBoxAdapter(
-                          child: Center(child: Padding(
-                            padding: EdgeInsets.all(50.0),
-                            child: CircularProgressIndicator(),
-                          )));
+                          child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(50.0),
+                                child: CircularProgressIndicator(),
+                              )));
                     }
-                    if (snapshot.hasError) { // ✅ 에러 발생 시 더 명확한 메시지 표시
+                    if (snapshot.hasError) {
                       return SliverToBoxAdapter(
-                          child: Center(child: Text('에러가 발생했습니다: ${snapshot.error}')));
+                          child: Center(
+                              child: Text('에러가 발생했습니다: ${snapshot.error}')));
                     }
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      _menus = []; // 데이터가 없으면 빈 리스트로 초기화
+                      _menus = [];
                       return const SliverToBoxAdapter(
                           child: Center(child: Text('메뉴 정보가 없습니다.')));
                     }
 
-                    // ✅ Future가 완료되면 _menus 상태 변수에 데이터 저장
                     if (_menus == null) {
                       _menus = snapshot.data!;
                     }
 
-                    // ✅ 이제 snapshot 대신 _menus 상태 변수를 사용
-                    return SliverMainAxisGroup(
-                        slivers: [
-                          _buildTopMenusSection(_menus!),
-                          const SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                              child: Text('메인 메뉴', style: AppTextStyles.subtitle18SemiBold),
-                            ),
-                          ),
-                          _buildMainMenuList(_menus!),
-                        ]
-                    );
+                    return SliverMainAxisGroup(slivers: [
+                      _buildTopMenusSection(_menus!),
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: Text('메인 메뉴',
+                              style: AppTextStyles.subtitle18SemiBold),
+                        ),
+                      ),
+                      _buildMainMenuList(_menus!),
+                    ]);
                   },
                 ),
               ],
@@ -372,7 +399,8 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                 child: GestureDetector(
                   onTap: () => setState(() => _showPopup = false),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
                       color: AppColors.white,
                       borderRadius: BorderRadius.circular(12),

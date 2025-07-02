@@ -1,6 +1,6 @@
-// lib/pages/review_page.dart (최종 수정본)
-import 'dart:developer'; // debugPrint를 위해 추가
+// lib/pages/review_page.dart (최종 통일본)
 
+import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
@@ -14,36 +14,53 @@ import 'package:jeonmattaeng/utils/secure_storage.dart';
 
 class ReviewPage extends StatefulWidget {
   final Menu menu;
-  const ReviewPage({super.key, required this.menu});
+  final String storeName;
+  final int? rank; // ✅ 1. 순위 정보를 받기 위한 변수 추가 (nullable)
+
+  const ReviewPage({
+    super.key,
+    required this.menu,
+    required this.storeName,
+    this.rank, // ✅ 2. 생성자에 순위 변수 추가
+  });
+
   @override
   State<ReviewPage> createState() => _ReviewPageState();
 }
+
 class _ReviewPageState extends State<ReviewPage> {
   late Future<List<Review>> _reviewsFuture;
   final TextEditingController _controller = TextEditingController();
   late Menu _menu;
   String? myUserId;
   bool _didLikeChange = false;
+
   @override
   void initState() {
     super.initState();
     _menu = widget.menu;
-    _loadUserIdAndFetchReviews();
+    _loadInitialData();
   }
-  Future<void> _loadUserIdAndFetchReviews() async {
+
+  Future<void> _loadInitialData() async {
     final jwt = await SecureStorage.getToken();
     if (!mounted) return;
+
     final userId = jwt != null ? JwtUtils.extractUserId(jwt) : null;
+    final reviewsFuture = ReviewService.getReviews(_menu.id);
+
     setState(() {
       myUserId = userId;
+      _reviewsFuture = reviewsFuture;
     });
-    _fetchReviews();
   }
-  void _fetchReviews() {
+
+  void _refreshReviews() {
     setState(() {
       _reviewsFuture = ReviewService.getReviews(_menu.id);
     });
   }
+
   void _submitReview() async {
     final content = _controller.text.trim();
     if (content.isEmpty) return;
@@ -51,30 +68,32 @@ class _ReviewPageState extends State<ReviewPage> {
     try {
       await ReviewService.postReview(_menu.id, content);
       _controller.clear();
-      _fetchReviews();
-    } catch (_) {
+      _refreshReviews();
+    } catch (e) {
       if (!mounted) return;
+      debugPrint("리뷰 등록 실패: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('리뷰 등록 실패')),
       );
     }
   }
+
   void _deleteReview(String reviewId) async {
     try {
       await ReviewService.deleteReview(reviewId);
-      _fetchReviews();
-    } catch (_) {
+      _refreshReviews();
+    } catch (e) {
       if (!mounted) return;
+      debugPrint("리뷰 삭제 실패: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('리뷰 삭제 실패')),
       );
     }
   }
 
-  // ✅ 좋아요 로직 수정
   void _toggleLike() async {
     final isLiked = _menu.liked;
-    final originalMenu = _menu; // 되돌리기를 위해 원래 상태 저장
+    final originalMenu = _menu;
 
     final updatedMenu = _menu.copyWith(
       liked: !isLiked,
@@ -89,10 +108,9 @@ class _ReviewPageState extends State<ReviewPage> {
           ? await MenuService.unlikeMenu(_menu.id)
           : await MenuService.likeMenu(_menu.id);
     } catch (e) {
-      // ✅ 디버깅 로그 추가
       debugPrint('❌ 좋아요 API 호출 실패: $e');
       setState(() {
-        _menu = originalMenu; // 실패 시 원래 상태로 복구
+        _menu = originalMenu;
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,49 +118,115 @@ class _ReviewPageState extends State<ReviewPage> {
       );
     }
   }
-  Widget _buildReviewInputBar() {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 12,
-        right: 12,
-        top: 8,
-        bottom: MediaQuery.of(context).padding.bottom + 8,
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.comment_outlined, color: AppColors.grey),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                hintText: '메뉴가 어땠는지 후기를 남겨주세요.',
-                border: InputBorder.none,
-              ),
+
+  // 메뉴 정보 섹션 UI
+  Widget _buildMenuInfoSection() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_menu.name, style: AppTextStyles.title24Bold),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: _toggleLike,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _menu.liked
+                          ? const Color(0xFFFFEBEE)
+                          : AppColors.unclickgrey,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.favorite,
+                            size: 16,
+                            color: _menu.liked
+                                ? AppColors.heartRed
+                                : AppColors.grey),
+                        const SizedBox(width: 4),
+                        Text(_menu.likeCount.toString(),
+                            style: TextStyle(
+                                color: _menu.liked
+                                    ? AppColors.heartRed
+                                    : AppColors.grey,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+                // ✅ 3. rank 정보가 있을 때만 인기 순위 태그를 표시
+                if (widget.rank != null && widget.rank! > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightteal,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text('인기 ${widget.rank}위',
+                          style: const TextStyle(
+                              color: AppColors.darkgreen,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12)),
+                    ),
+                  ),
+              ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.send, color: AppColors.darkgreen),
-            onPressed: _submitReview,
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
-  Widget _buildCachedImage(String imageUrl, double width, double height) {
+
+  // 리뷰 입력창 UI
+  Widget _buildReviewInputBar() {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          16, 8, 16, MediaQuery.of(context).padding.bottom + 8),
+      child: TextField(
+        controller: _controller,
+        decoration: InputDecoration(
+          hintText: '메뉴가 어땠는지 후기를 남겨주세요.',
+          prefixIcon: const Icon(Icons.search, color: AppColors.grey, size: 20),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.send, color: AppColors.darkgreen),
+            onPressed: _submitReview,
+          ),
+          filled: true,
+          fillColor: const Color(0xFFF5F5F5),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 이미지 캐싱 위젯
+  Widget _buildCachedImage(String imageUrl) {
     const fallbackImageAsset = 'assets/image/이미지없음표시.png';
     if (imageUrl.isEmpty) {
-      return Image.asset(fallbackImageAsset, width: width, height: height, fit: BoxFit.cover);
+      return Image.asset(fallbackImageAsset, fit: BoxFit.cover);
     }
     return CachedNetworkImage(
       imageUrl: imageUrl,
-      width: width,
-      height: height,
       fit: BoxFit.cover,
       placeholder: (context, url) => Container(color: AppColors.unclickgrey),
-      errorWidget: (context, url, error) => Image.asset(fallbackImageAsset, fit: BoxFit.cover),
+      errorWidget: (context, url, error) =>
+          Image.asset(fallbackImageAsset, fit: BoxFit.cover),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -161,63 +245,37 @@ class _ReviewPageState extends State<ReviewPage> {
                     expandedHeight: MediaQuery.of(context).size.height / 5,
                     pinned: true,
                     leading: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.white),
-                      onPressed: () => Navigator.pop(context, _didLikeChange ? _menu : null),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.black45,
-                      ),
+                      icon:
+                      const Icon(Icons.arrow_back, color: AppColors.white),
+                      onPressed: () =>
+                          Navigator.pop(context, _didLikeChange ? _menu : null),
                     ),
-                    // ✅ UI 수정된 부분
+                    title: Text(widget.storeName,
+                        style: AppTextStyles.subtitle18SemiBold
+                            .copyWith(color: AppColors.white)),
                     flexibleSpace: FlexibleSpaceBar(
                       background: Stack(
                         fit: StackFit.expand,
                         children: [
-                          _buildCachedImage(_menu.image, double.infinity, MediaQuery.of(context).size.height / 5),
-                          Container(
-                            decoration: const BoxDecoration(
+                          _buildCachedImage(_menu.image),
+                          const DecoratedBox(
+                            decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.black54, Colors.transparent],
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.center,
+                                colors: [Colors.black45, Colors.transparent],
+                                begin: Alignment.topCenter,
+                                end: Alignment(0.0, -0.2),
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            left: 16,
-                            right: 16,
-                            bottom: 16,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(_menu.name, style: AppTextStyles.title24Bold.copyWith(color: AppColors.white)),
-                                const SizedBox(height: 8),
-                                GestureDetector(
-                                  onTap: _toggleLike,
-                                  child: Container(
-                                    color: Colors.transparent,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          _menu.liked ? Icons.favorite : Icons.favorite_border,
-                                          color: _menu.liked ? AppColors.heartRed : AppColors.white,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          _menu.likeCount.toString(),
-                                          style: AppTextStyles.body16Regular.copyWith(color: AppColors.white),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  _buildMenuInfoSection(),
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Divider(height: 1),
                     ),
                   ),
                   FutureBuilder<List<Review>>(
@@ -225,15 +283,20 @@ class _ReviewPageState extends State<ReviewPage> {
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SliverToBoxAdapter(
-                          child: Center(child: CircularProgressIndicator()),
+                          child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              )),
                         );
                       }
-                      if (snapshot.hasError || !snapshot.hasData) {
-                        return const SliverToBoxAdapter(
-                            child: Center(child: Text('리뷰를 불러올 수 없습니다.')));
+                      if (snapshot.hasError) {
+                        return SliverToBoxAdapter(
+                            child: Center(
+                                child: Text(
+                                    '리뷰를 불러올 수 없습니다.\n에러: ${snapshot.error}')));
                       }
-                      final reviews = snapshot.data!;
-                      if (reviews.isEmpty) {
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const SliverToBoxAdapter(
                           child: Center(
                             child: Padding(
@@ -243,19 +306,25 @@ class _ReviewPageState extends State<ReviewPage> {
                           ),
                         );
                       }
+                      final reviews = snapshot.data!;
+
                       return SliverList.builder(
                         itemCount: reviews.length,
                         itemBuilder: (context, index) {
                           final review = reviews[index];
-                          final isMyReview = myUserId != null && review.authorId == myUserId;
+                          final isMyReview =
+                              myUserId != null && review.authorId == myUserId;
                           return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
                             onTap: () {
                               if (isMyReview) {
                                 showModalBottomSheet(
                                   context: context,
                                   builder: (context) => SafeArea(
                                     child: ListTile(
-                                      leading: const Icon(Icons.delete, color: AppColors.heartRed),
+                                      leading: const Icon(Icons.delete,
+                                          color: AppColors.heartRed),
                                       title: const Text('삭제하기'),
                                       onTap: () {
                                         Navigator.pop(context);
@@ -267,19 +336,23 @@ class _ReviewPageState extends State<ReviewPage> {
                               }
                             },
                             leading: CircleAvatar(
-                              backgroundImage: review.userProfileImage.isNotEmpty
-                                  ? CachedNetworkImageProvider(review.userProfileImage)
+                              backgroundImage:
+                              review.userProfileImage.isNotEmpty
+                                  ? CachedNetworkImageProvider(
+                                  review.userProfileImage)
                                   : null,
                               backgroundColor: AppColors.grey,
                               child: review.userProfileImage.isEmpty
-                                  ? const Icon(Icons.person, color: AppColors.white)
+                                  ? const Icon(Icons.person,
+                                  color: AppColors.white)
                                   : null,
                             ),
                             title: Text(review.content),
                             subtitle: Text(review.userNickname),
                             trailing: Text(
                               '${review.createdAt.month.toString().padLeft(2, '0')}/${review.createdAt.day.toString().padLeft(2, '0')} ${review.createdAt.hour.toString().padLeft(2, '0')}:${review.createdAt.minute.toString().padLeft(2, '0')}',
-                              style: AppTextStyles.caption10Medium.copyWith(color: AppColors.grey),
+                              style: AppTextStyles.caption10Medium
+                                  .copyWith(color: AppColors.grey),
                             ),
                           );
                         },

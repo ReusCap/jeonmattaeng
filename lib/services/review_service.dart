@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:jeonmattaeng/models/review_model.dart';
 import 'package:jeonmattaeng/services/dio_client.dart';
 import 'package:jeonmattaeng/config/api_config.dart';
-import 'package:flutter/material.dart'; // debugPrint 사용
+import 'package:flutter/material.dart';
 
 class ReviewService {
   static final Dio _dio = DioClient.dio;
@@ -12,7 +12,6 @@ class ReviewService {
   /// 🔍 특정 메뉴의 리뷰 목록 불러오기
   static Future<List<Review>> getReviews(String menuId) async {
     try {
-      // ✅ ApiConfig의 통합된 메서드 호출
       final response = await _dio.get(ApiConfig.reviewsByMenu(menuId));
       debugPrint('[ReviewService] 리뷰 목록(${menuId}) 불러오기 성공');
       return (response.data as List)
@@ -27,10 +26,10 @@ class ReviewService {
   /// ✏️ 리뷰 작성
   static Future<void> postReview(String menuId, String content) async {
     try {
-      // ✅ ApiConfig의 통합된 메서드 호출
       await _dio.post(
         ApiConfig.reviewsByMenu(menuId),
-        data: {'content': content}, // API 명세에 따라 'body' 또는 'content' 사용
+        // ✅ 이 부분의 키를 'content'에서 'body'로 수정합니다.
+        data: {'body': content},
       );
       debugPrint('[ReviewService] 리뷰(${menuId}) 등록 성공');
     } catch (e) {
