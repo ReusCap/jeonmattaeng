@@ -1,7 +1,5 @@
-// dio_client.dart
-// Dio에 인터셉터를 설정해서,
-// secure storage에서 불러온 JWT를 모든 요청의 Authorization 헤더에 자동으로 추가하도록 구성했습니다.
-// 이렇게 하면 API를 호출할 때마다 매번 토큰을 명시할 필요 없이, 인증이 필요한 요청을 쉽게 처리할 수 있습니다.
+// dio_client.dart (최적화 후)
+
 import 'package:dio/dio.dart';
 import 'package:jeonmattaeng/utils/secure_storage.dart';
 
@@ -10,14 +8,20 @@ class DioClient {
     ..interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await SecureStorage.getToken(); // JWT 불러오기
+          final token = await SecureStorage.getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
         },
-        onError: (e, handler) {
-          // 에러 처리 필요 시
+        // ✅ 최적화: onError 핸들러 추가
+        onError: (e, handler) async {
+          // 401 에러(인증 실패)가 발생했을 때
+          if (e.response?.statusCode == 401) {
+            // 저장되어 있던 유효하지 않은 토큰을 삭제합니다.
+            await SecureStorage.deleteToken();
+            print('[DioClient] ❌ 401 Unauthorized. 토큰을 삭제합니다.');
+          }
           return handler.next(e);
         },
       ),

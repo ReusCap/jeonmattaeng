@@ -1,68 +1,87 @@
-// auth_service.dart
-// Dio 패키지: HTTP 통신을 간편하게 처리할 수 있게 해주는 Flutter의 대표적인 네트워킹 라이브러리
+// auth_service.dart (최적화 후)
+
 import 'package:dio/dio.dart';
-// Flutter UI 요소 접근을 위해 필요 (예: Navigator 사용 시 필요)
-import 'package:flutter/material.dart';
-// 서버 주소와 API 경로가 정의된 설정 파일
+import 'package:flutter/material.dart'; // debugPrint 사용
 import 'package:jeonmattaeng/config/api_config.dart';
-// 카카오 로그인 SDK 연동한 로그인 로직이 정의된 서비스 클래스
 import 'package:jeonmattaeng/services/kakao_login_service.dart';
-// JWT 토큰 저장/불러오기를 위한 보안 저장소 유틸리티
 import 'package:jeonmattaeng/utils/secure_storage.dart';
-// Dio 설정을 캡슐화한 커스텀 Dio 클라이언트
 import 'package:jeonmattaeng/services/dio_client.dart';
-/// 인증 관련 로직을 모아둔 클래스 (로그인, 로그아웃 등)
+
 class AuthService {
-  // 공통적으로 사용할 Dio 인스턴스 (interceptor 등 설정된 Dio 객체)
   static final Dio _dio = DioClient.dio;
 
-  /// 카카오 로그인 → 서버 인증 → JWT 저장 까지를 처리하는 함수
-  static Future<bool> loginWithKakao(BuildContext context) async {
+  // ✅ 1. isLoggedIn() 메서드 추가 (SplashPage에서 사용)
+  /// 앱 시작 시 사용자의 로그인 상태를 확인하는 메서드
+  static Future<bool> isLoggedIn() async {
+    final token = await SecureStorage.getToken();
+    if (token == null) {
+      return false; // 토큰이 없으면 비로그인 상태
+    }
+    // 토큰이 있는 경우, 서버에 유효한지 검증
+    return await verifyJwt();
+  }
+
+  // ✅ 2. loginWithKakao() 메서드에서 불필요한 파라미터 제거
+  /// 카카오 로그인 및 서버 인증 처리
+  static Future<bool> loginWithKakao() async { // BuildContext context 제거
     final token = await KakaoLoginService.login();
 
     if (token == null) {
-      print('[AuthService] ❌ 카카오 로그인 실패 (token == null)');
-      throw Exception('카카오 로그인 실패 (token 없음)');
+      debugPrint('[AuthService] ❌ 카카오 로그인 실패 (token == null)');
+      return false; // 실패 시 false 반환으로 통일
     }
 
-    print('[AuthService] ✅ accessToken: ${token.accessToken}');
+    debugPrint('[AuthService] ✅ accessToken: ${token.accessToken}');
 
     try {
       final response = await _dio.post(
         ApiConfig.kakaoLogin,
         data: {'accessToken': token.accessToken},
       );
-      print('[AuthService] ✅ 서버 응답: ${response.data}');
 
       final jwt = response.data['token'];
       if (jwt == null) {
-        throw Exception('JWT 토큰 없음 (백엔드 응답 오류)');
+        debugPrint('[AuthService] ❌ 서버 응답에 JWT 토큰이 없습니다.');
+        return false;
       }
 
       await SecureStorage.saveToken(jwt);
       return true;
+    } on DioException catch (e) { // DioError 대신 DioException 사용 (최신 버전)
+      debugPrint('[AuthService] ❌ 서버 통신 실패: $e');
+      return false;
     } catch (e) {
-      print('[AuthService] ❌ 서버 통신 실패: $e');
-      throw Exception('서버 인증 실패: $e');
+      debugPrint('[AuthService] ❌ 알 수 없는 에러: $e');
+      return false;
     }
   }
-  /// JWT 유효성 검증용 API 호출 (GET /auth/verify)
-  static Future<void> verifyJwt() async {
+
+  // ✅ 3. verifyJwt() 메서드 개선
+  /// 저장된 JWT 토큰의 유효성을 서버에 검증하는 메서드
+  static Future<bool> verifyJwt() async {
     try {
-      final response = await _dio.get('${ApiConfig.baseUrl}/auth/verify');
-      print('[AuthService] ✅ JWT 검증 성공: ${response.data}');
+      // DioClient에 인터셉터가 설정되어 있으므로, 헤더를 명시할 필요 없음
+      await _dio.get('${ApiConfig.baseUrl}/auth/verify');
+      debugPrint('[AuthService] ✅ JWT 토큰 유효함.');
+      return true;
     } catch (e) {
-      print('[AuthService] ❌ JWT 검증 실패: $e');
+      debugPrint('[AuthService] ❌ JWT 검증 실패: $e');
+      // dio_client의 onError 인터셉터가 토큰을 삭제하지만, 여기서 한 번 더 확인사살
+      await SecureStorage.deleteToken();
+      return false;
     }
   }
+
   /// 회원 탈퇴
   static Future<bool> deleteAccount() async {
     try {
-      final response = await DioClient.dio.delete(ApiConfig.deleteAccount);
-      print('[AuthService] ✅ 회원 탈퇴 성공: ${response.statusCode}');
+      await _dio.delete(ApiConfig.deleteAccount);
+      debugPrint('[AuthService] ✅ 회원 탈퇴 성공');
+      // 탈퇴 성공 시 로컬 토큰도 삭제
+      await SecureStorage.deleteToken();
       return true;
     } catch (e) {
-      print('[AuthService] ❌ 회원 탈퇴 실패: $e');
+      debugPrint('[AuthService] ❌ 회원 탈퇴 실패: $e');
       return false;
     }
   }
