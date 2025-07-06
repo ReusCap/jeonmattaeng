@@ -10,13 +10,13 @@ class MyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // ✅ 새하얀 배경 고정
+      backgroundColor: AppColors.white, // ✅ 새하얀 배경 고정
       appBar: AppBar(
         centerTitle: true, // ✅ 제목 가운데 정렬
         title: Text('마이페이지', style: AppTextStyles.title20SemiBold),
         elevation: 0.5,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
       ),
       body: ListView(
         children: [

@@ -135,7 +135,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                 const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
                 const SizedBox(width: 4),
                 Text(_storeLikeCount.toString(),
-                    style: AppTextStyles.caption10Medium
+                    style: AppTextStyles.caption14Medium
                         .copyWith(color: AppColors.heartRed)),
               ],
             ),
@@ -210,7 +210,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                                 size: 14, color: AppColors.heartRed),
                             const SizedBox(width: 4),
                             Text(menu.likeCount.toString(),
-                                style: AppTextStyles.caption10Medium),
+                                style: AppTextStyles.caption14Medium),
                           ],
                         ),
                       ],

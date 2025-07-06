@@ -227,7 +227,7 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.unclickGrey, width: 1)),
-                    child: Text(menuDisplayName, style: AppTextStyles.button11Bold.copyWith(color: AppColors.heartRed)),
+                    child: Text(menuDisplayName, style: AppTextStyles.button14Bold.copyWith(color: AppColors.heartRed)),
                   ),
                 ],
               ),

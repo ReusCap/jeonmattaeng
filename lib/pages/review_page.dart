@@ -351,7 +351,7 @@ class _ReviewPageState extends State<ReviewPage> {
                             subtitle: Text(review.userNickname),
                             trailing: Text(
                               '${review.createdAt.month.toString().padLeft(2, '0')}/${review.createdAt.day.toString().padLeft(2, '0')} ${review.createdAt.hour.toString().padLeft(2, '0')}:${review.createdAt.minute.toString().padLeft(2, '0')}',
-                              style: AppTextStyles.caption10Medium
+                              style: AppTextStyles.caption14Medium
                                   .copyWith(color: AppColors.grey),
                             ),
                           );

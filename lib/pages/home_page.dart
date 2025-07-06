@@ -25,7 +25,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // 상단 헤더 UI
+  // 상단 헤더 UI (변경 없음)
   Widget _buildTopHeader(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -59,7 +59,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // 위치 선택 버튼 UI
+  // 위치 선택 버튼 UI (변경 없음)
   Widget _buildLocationButtons(BuildContext context) {
     // 헤더와 겹치도록 transform 사용
     return Transform.translate(
@@ -86,7 +86,7 @@ class HomePage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _locationButton(context, '후문', 'assets/icons/전대후문.png'),
+                _locationButton(context, '전대후문', 'assets/icons/전대후문.png'),
                 _locationButton(context, '상대', 'assets/icons/상대.png'),
                 _locationButton(context, '정문', 'assets/icons/정문.png'),
               ],
@@ -97,7 +97,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // 개별 위치 버튼 위젯
+  // 개별 위치 버튼 위젯 (변경 없음)
   Widget _locationButton(BuildContext context, String locationName, String iconPath) {
     return GestureDetector(
       onTap: () {
@@ -118,7 +118,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // 메뉴 추천 카드 UI
+  // ✨ 메뉴 추천 카드 UI (수정된 부분)
   Widget _buildRecommendCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -134,31 +134,48 @@ class HomePage extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFFF0F9EF),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE57373), width: 1.5),
+            // ✨ 1. 테두리 색상을 초록색 계열로 변경
+            border: Border.all(color: const Color(0xFF81C784), width: 1.5),
           ),
+          // ✨ 2. Row의 자식으로 [이미지, Expanded(Column(...))] 구조로 변경
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // `assets/image/lunchbox_icon.png` 경로에 도시락 아이콘 이미지가 있어야 합니다.
-              Image.asset('assets/image/메뉴추천.png', width: 50),
+              // 스크린샷과 유사한 이미지를 사용해야 합니다.
+              Image.asset('assets/image/메뉴추천.png', width: 60, height: 60),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('오늘 뭐 먹지?', style: AppTextStyles.subtitle18SemiBold),
-                    SizedBox(height: 4),
-                    Text('고민된다면 메뉴를 추천받아 보세요 힛~', style: AppTextStyles.body16Regular),
+                    const Text('오늘 뭐 먹지?', style: AppTextStyles.subtitle18SemiBold),
+                    const SizedBox(height: 4),
+                    Text('고민된다면 메뉴를 추천받아 보세요 힛~',
+                        style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)), // 폰트 크기 살짝 조절
+                    const SizedBox(height: 12),
+                    // ✨ 3. 버튼을 Column 안으로 이동시키고 스타일 수정
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF96A81), // 이미지와 유사한 핑크색
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min, // 버튼 크기를 내용물에 맞춤
+                        children: [
+                          Text('빠르게 메뉴 추천 받아보기!',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12)),
+                          SizedBox(width: 6),
+                          Icon(Icons.arrow_forward_ios, color: Colors.white, size: 12),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE57373),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: const Text('빠르게 메뉴 추천 받아보기!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-              )
             ],
           ),
         ),

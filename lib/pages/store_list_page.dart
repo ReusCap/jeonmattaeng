@@ -1,7 +1,7 @@
-// lib/pages/store_list_page.dart (최종 수정본)
+// lib/pages/store_list_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:jeonmattaeng/pages/menu_page.dart'; // ✅ MenuPage 임포트
+import 'package:jeonmattaeng/pages/menu_page.dart';
 import 'package:jeonmattaeng/providers/store_provider.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
@@ -14,9 +14,7 @@ class StoreListPage extends StatelessWidget {
 
   const StoreListPage({super.key, required this.selectedLocation});
 
-  // ✅ 1. MenuPage로 이동하는 로직을 별도 함수로 분리
   void _navigateToMenuPage(BuildContext context, Store store) async {
-    // MenuPage에서 '좋아요' 상태가 변경되었을 수 있으므로, bool 값을 반환받음
     final bool? didLikeChange = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -32,9 +30,7 @@ class StoreListPage extends StatelessWidget {
       ),
     );
 
-    // MenuPage에서 좋아요 변경이 있었다면, 가게 목록을 새로고침하여 반영
     if (didLikeChange == true && context.mounted) {
-      // Provider를 통해 fetchStores를 호출 (context.read는 버튼처럼 한번만 호출할 때 사용)
       context.read<StoreProvider>().fetchStores();
     }
   }
@@ -46,6 +42,7 @@ class StoreListPage extends StatelessWidget {
       child: Consumer<StoreProvider>(
         builder: (context, provider, child) {
           return Scaffold(
+            backgroundColor: AppColors.white, // ✨ 1. Scaffold 배경색을 흰색으로 설정
             appBar: _buildAppBar(context, provider),
             body: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -67,8 +64,11 @@ class StoreListPage extends StatelessWidget {
   }
 
   AppBar _buildAppBar(BuildContext context, StoreProvider provider) {
-    // ... 기존과 동일
     return AppBar(
+      // ✨ 2. AppBar 스타일 수정
+      backgroundColor: AppColors.white,
+      foregroundColor: AppColors.black, // title, actions 아이콘 색상 등을 한번에 지정
+      elevation: 0, // 앱바 아래 그림자 제거
       title: Text(provider.selectedLocation, style: AppTextStyles.title20SemiBold),
       centerTitle: true,
       actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.search))],
@@ -167,11 +167,11 @@ class StoreListPage extends StatelessWidget {
     );
   }
 
-  // ✅ 2. _buildStoreCard 수정
   Widget _buildStoreCard(BuildContext context, Store store) {
-    return GestureDetector( // GestureDetector로 감싸서 탭 가능하게 만듦
-      onTap: () => _navigateToMenuPage(context, store), // 탭하면 페이지 이동
+    return GestureDetector(
+      onTap: () => _navigateToMenuPage(context, store),
       child: Card(
+        color: AppColors.white, // ✨ 3. Card 배경색 추가
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Column(
@@ -191,7 +191,7 @@ class StoreListPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(store.name, style: AppTextStyles.body16Bold, overflow: TextOverflow.ellipsis),
-                  Text(store.foodCategory, style: AppTextStyles.caption10Medium.copyWith(color: AppColors.grey)),
+                  Text(store.foodCategory, style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)),
                   Row(
                     children: [
                       const Icon(Icons.favorite, color: AppColors.heartRed, size: 14),
@@ -212,11 +212,11 @@ class StoreListPage extends StatelessWidget {
     );
   }
 
-  // ✅ 3. _buildStoreTile 수정
   Widget _buildStoreTile(BuildContext context, Store store) {
-    return GestureDetector( // GestureDetector로 감싸서 탭 가능하게 만듦
-      onTap: () => _navigateToMenuPage(context, store), // 탭하면 페이지 이동
+    return GestureDetector(
+      onTap: () => _navigateToMenuPage(context, store),
       child: Card(
+        color: AppColors.white, // ✨ 3. Card 배경색 추가
         margin: const EdgeInsets.only(bottom: 12),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
