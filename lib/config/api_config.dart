@@ -26,4 +26,7 @@ class ApiConfig {
   // --- Review ---
   static String reviewsByMenu(String menuId) => '$_base/menu/$menuId/reviews';
   static String deleteReview(String reviewId) => '$_base/menu/reviews/$reviewId';
+
+  // --- Random Recommend ---
+  static String recommendStore(String locationCategory) => '$_base/recommend/$locationCategory';
 }

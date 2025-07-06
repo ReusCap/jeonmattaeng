@@ -188,18 +188,18 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: _buildCachedImage(menu.image, 100, 100),
+                          child: _buildCachedImage(menu.displayedImg, 100, 100),
                         ),
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                              color: AppColors.lightteal,
+                              color: AppColors.lightTeal,
                               borderRadius: BorderRadius.circular(12)),
                           child: Text('인기 ${index + 1}위',
                               style: const TextStyle(
-                                  fontSize: 10, color: AppColors.darkgreen)),
+                                  fontSize: 10, color: AppColors.primaryGreen)),
                         ),
                         const SizedBox(height: 4),
                         Text(menu.name, style: AppTextStyles.body16Regular),
@@ -242,7 +242,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
             child: ListTile(
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8.0),
-                child: _buildCachedImage(menu.image, 50, 50),
+                child: _buildCachedImage(menu.displayedImg, 50, 50),
               ),
               title: Text(menu.name, style: AppTextStyles.title20SemiBold),
               subtitle:
@@ -282,7 +282,7 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
       placeholder: (context, url) => Container(
         width: width,
         height: height,
-        color: AppColors.unclickgrey,
+        color: AppColors.unclickGrey,
       ),
       errorWidget: (context, url, error) => Image.asset(
         fallbackImageAsset,

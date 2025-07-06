@@ -2,7 +2,7 @@ class Menu {
   final String id;
   final String name;
   final int price;
-  final String image;
+  final String displayedImg;
   final int likeCount;
   final bool liked;
 
@@ -10,7 +10,7 @@ class Menu {
     required this.id,
     required this.name,
     required this.price,
-    required this.image,
+    required this.displayedImg,
     required this.likeCount,
     required this.liked,
   });
@@ -23,7 +23,7 @@ class Menu {
       id: json['_id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       price: json['price'] is int ? json['price'] : int.tryParse(json['price'].toString()) ?? 0,
-      image: json['image']?.toString() ?? '',
+      displayedImg: json['image']?.toString() ?? '',
       likeCount: json['likeCount'] is int ? json['likeCount'] : int.tryParse(json['likeCount'].toString()) ?? 0,
       liked: json['heart'] == true || json['heart']?.toString() == 'true',
     );
@@ -35,7 +35,7 @@ class Menu {
       '_id': id,
       'name': name,
       'price': price,
-      'image': image,
+      'image': displayedImg,
       'likeCount': likeCount,
       'heart': liked,
     };
@@ -54,7 +54,7 @@ class Menu {
       id: id ?? this.id,
       name: name ?? this.name,
       price: price ?? this.price,
-      image: image ?? this.image,
+      displayedImg: image ?? this.displayedImg,
       likeCount: likeCount ?? this.likeCount,
       liked: liked ?? this.liked,
     );

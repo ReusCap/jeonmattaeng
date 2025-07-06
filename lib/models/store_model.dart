@@ -4,7 +4,7 @@ class Store {
   final String name;
   final String location;
   final List<String> menus;
-  final String image;
+  final String displayedImg;
   final int likeSum;
   final String locationCategory;
   final String foodCategory;
@@ -14,7 +14,7 @@ class Store {
     required this.name,
     required this.location,
     required this.menus,
-    required this.image,
+    required this.displayedImg,
     required this.likeSum,
     required this.locationCategory,
     required this.foodCategory,
@@ -29,7 +29,7 @@ class Store {
         name: json['name'] ?? '',
         location: json['location'] ?? '',
         menus: List<String>.from(json['menus'] ?? []),
-        image: json['image'] ?? '',
+        displayedImg: json['image'] ?? '',
         likeSum: json['likeSum'] ?? 0,
         locationCategory: json['locationCategory'] ?? '',
         foodCategory: json['foodCategory'] ?? '',

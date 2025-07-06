@@ -24,7 +24,7 @@ class StoreListPage extends StatelessWidget {
           storeId: store.id,
           storeName: store.name,
           storeCategory: store.foodCategory,
-          storeImage: store.image,
+          storeImage: store.displayedImg,
           storeLikeCount: store.likeSum,
           storeLocation: store.location,
           storeLocationCategory: store.locationCategory,
@@ -90,12 +90,12 @@ class StoreListPage extends StatelessWidget {
             onSelected: (selected) {
               provider.selectFoodCategory(category);
             },
-            selectedColor: AppColors.darkgreen,
+            selectedColor: AppColors.primaryGreen,
             labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.unclickgrey),
+              side: const BorderSide(color: AppColors.unclickGrey),
             ),
           );
         }).toList(),
@@ -179,7 +179,7 @@ class StoreListPage extends StatelessWidget {
           children: [
             Expanded(
               child: CachedNetworkImage(
-                imageUrl: store.image,
+                imageUrl: store.displayedImg,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorWidget: (context, url, error) => const Icon(Icons.error),
@@ -246,7 +246,7 @@ class StoreListPage extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
-                  imageUrl: store.image,
+                  imageUrl: store.displayedImg,
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,

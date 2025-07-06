@@ -139,7 +139,7 @@ class _ReviewPageState extends State<ReviewPage> {
                     decoration: BoxDecoration(
                       color: _menu.liked
                           ? const Color(0xFFFFEBEE)
-                          : AppColors.unclickgrey,
+                          : AppColors.unclickGrey,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -168,12 +168,12 @@ class _ReviewPageState extends State<ReviewPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.lightteal,
+                        color: AppColors.lightTeal,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text('인기 ${widget.rank}위',
                           style: const TextStyle(
-                              color: AppColors.darkgreen,
+                              color: AppColors.primaryGreen,
                               fontWeight: FontWeight.bold,
                               fontSize: 12)),
                     ),
@@ -197,7 +197,7 @@ class _ReviewPageState extends State<ReviewPage> {
           hintText: '메뉴가 어땠는지 후기를 남겨주세요.',
           prefixIcon: const Icon(Icons.search, color: AppColors.grey, size: 20),
           suffixIcon: IconButton(
-            icon: const Icon(Icons.send, color: AppColors.darkgreen),
+            icon: const Icon(Icons.send, color: AppColors.primaryGreen),
             onPressed: _submitReview,
           ),
           filled: true,
@@ -221,7 +221,7 @@ class _ReviewPageState extends State<ReviewPage> {
     return CachedNetworkImage(
       imageUrl: imageUrl,
       fit: BoxFit.cover,
-      placeholder: (context, url) => Container(color: AppColors.unclickgrey),
+      placeholder: (context, url) => Container(color: AppColors.unclickGrey),
       errorWidget: (context, url, error) =>
           Image.asset(fallbackImageAsset, fit: BoxFit.cover),
     );
@@ -257,7 +257,7 @@ class _ReviewPageState extends State<ReviewPage> {
                       background: Stack(
                         fit: StackFit.expand,
                         children: [
-                          _buildCachedImage(_menu.image),
+                          _buildCachedImage(_menu.displayedImg),
                           const DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(

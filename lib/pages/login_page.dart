@@ -28,7 +28,7 @@ class LoginPage extends StatelessWidget {
                 Text(
                   '전맛탱',
                   style: AppTextStyles.display.copyWith(
-                    color: AppColors.kakaoGreen,
+                    color: AppColors.primaryGreen,
                   ),
                 ),
               ],
