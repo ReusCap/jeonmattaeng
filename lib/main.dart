@@ -1,40 +1,41 @@
-// main.dart (최적화 후)
+// lib/main.dart (Provider 적용 최종본)
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:jeonmattaeng/pages/home_page.dart';
 import 'package:jeonmattaeng/pages/login_page.dart';
 import 'package:jeonmattaeng/pages/main_tab_page.dart';
-import 'package:jeonmattaeng/constants/routes.dart';
 import 'package:jeonmattaeng/pages/splash_page.dart';
+import 'package:jeonmattaeng/constants/routes.dart';
+import 'package:jeonmattaeng/providers/store_provider.dart';
+import 'package:provider/provider.dart';
 
-
-// RouteObserver는 여러 화면에 걸쳐 라우팅 이벤트를 감지할 때 유용합니다.
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
-/// 앱 실행 전 필요한 비동기 초기화 로직
 Future<void> main() async {
-  // Flutter 엔진과 위젯 바인딩을 보장합니다.
   WidgetsFlutterBinding.ensureInitialized();
-
-  // .env 파일 로드
   await dotenv.load(fileName: ".env");
 
-  // 카카오 SDK 초기화
   final kakaoKey = dotenv.env['KAKAO_NATIVE_APP_KEY'];
   if (kakaoKey == null) {
-    // 앱 키가 없으면 치명적인 오류이므로, 개발자가 인지할 수 있도록 합니다.
     throw Exception("KAKAO_NATIVE_APP_KEY not found in .env file");
   }
   KakaoSdk.init(nativeAppKey: kakaoKey);
 
-  // ✅ 최적화: 토큰 확인 및 라우팅 로직은 SplashPage로 이전했습니다.
-  // main 함수는 앱 실행을 위한 최소한의 초기화만 담당합니다.
-  runApp(const MyApp());
+  runApp(
+    // ✅ 앱 전체에서 Provider를 사용할 수 있도록 MultiProvider로 감싸줍니다.
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => StoreProvider()),
+        // 다른 Provider가 필요하면 여기에 추가
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
-/// 앱의 루트 위젯
 class MyApp extends StatelessWidget {
-  // ✅ 최적화: 불필요한 initialRoute 파라미터 제거
   const MyApp({super.key});
 
   @override
@@ -42,14 +43,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '전맛탱',
       debugShowCheckedModeBanner: false,
-      // ✅ 앱의 시작은 항상 SplashPage가 담당합니다.
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (_) => const SplashPage(),
         AppRoutes.login: (_) => const LoginPage(),
+        // ✅ HomePage 경로 추가
+        AppRoutes.home: (_) => const HomePage(),
+        // MainTabPage는 하단 탭 네비게이션을 위해 남겨두거나 다른 방식으로 활용
         AppRoutes.main: (_) => const MainTabPage(),
       },
-      // 다른 페이지에서 pop 이벤트를 감지하기 위해 등록
       navigatorObservers: [routeObserver],
     );
   }
