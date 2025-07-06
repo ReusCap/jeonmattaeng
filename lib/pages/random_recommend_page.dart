@@ -69,10 +69,10 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
   String _getFoodCategoryImagePath(String? category) {
     switch (category) {
       case '한식': return 'assets/image/한식.png';
-      case '양식': return 'assets/image/양식.png';
-      case '일식': return 'assets/image/일식.png';
-      case '패스트푸드': return 'assets/image/패스트푸드.png';
       case '중식': return 'assets/image/중식.png';
+      case '일식': return 'assets/image/일식.png';
+      case '양식': return 'assets/image/양식.png';
+      case '기타': return 'assets/image/기타.png';
       default: return 'assets/image/한식.png'; // 기본 이미지
     }
   }

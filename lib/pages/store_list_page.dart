@@ -1,18 +1,66 @@
 // lib/pages/store_list_page.dart
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:jeonmattaeng/models/store_model.dart';
 import 'package:jeonmattaeng/pages/menu_page.dart';
 import 'package:jeonmattaeng/providers/store_provider.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
 import 'package:provider/provider.dart';
-import 'package:jeonmattaeng/models/store_model.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
+// ✨ 1. Provider를 생성하고 제공하는 역할만 하는 StatelessWidget
 class StoreListPage extends StatelessWidget {
   final String selectedLocation;
+  final String? initialSearchQuery;
 
-  const StoreListPage({super.key, required this.selectedLocation});
+  const StoreListPage({
+    super.key,
+    required this.selectedLocation,
+    this.initialSearchQuery,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => StoreProvider()
+      // ✨ 2. StoreListPage가 생성될 때 fetchStores를 호출하여 데이터 로딩 시작
+        ..fetchStores()
+        ..selectLocation(selectedLocation)
+        ..updateSearchQuery(initialSearchQuery ?? ''),
+      // ✨ 3. 실제 UI는 아래의 _StoreListPageView 위젯이 담당
+      child: _StoreListPageView(initialSearchQuery: initialSearchQuery),
+    );
+  }
+}
+
+// ✨ 4. UI와 상태를 관리하는 별도의 StatefulWidget
+class _StoreListPageView extends StatefulWidget {
+  final String? initialSearchQuery;
+  const _StoreListPageView({this.initialSearchQuery});
+
+  @override
+  State<_StoreListPageView> createState() => _StoreListPageViewState();
+}
+
+class _StoreListPageViewState extends State<_StoreListPageView> {
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialSearchQuery != null && widget.initialSearchQuery!.isNotEmpty) {
+      _isSearching = true;
+      _searchController.text = widget.initialSearchQuery!;
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _navigateToMenuPage(BuildContext context, Store store) async {
     final bool? didLikeChange = await Navigator.push<bool>(
@@ -37,47 +85,77 @@ class StoreListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => StoreProvider()..selectLocation(selectedLocation),
-      child: Consumer<StoreProvider>(
-        builder: (context, provider, child) {
-          return Scaffold(
-            backgroundColor: AppColors.white, // ✨ 1. Scaffold 배경색을 흰색으로 설정
-            appBar: _buildAppBar(context, provider),
-            body: provider.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Column(
-              children: [
-                _buildFoodCategoryFilters(context, provider),
-                _buildListHeader(context, provider),
-                Expanded(
-                  child: provider.isGridView
-                      ? _buildStoreGridView(context, provider)
-                      : _buildStoreListView(context, provider),
-                ),
-              ],
-            ),
-          );
-        },
+    // ✨ 5. Consumer를 통해 Provider의 데이터와 상태 변화를 감지
+    final provider = context.watch<StoreProvider>();
+
+    return Scaffold(
+      backgroundColor: AppColors.white,
+      appBar: _isSearching
+          ? _buildSearchAppBar(context, provider)
+          : _buildDefaultAppBar(context, provider),
+      body: provider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+        children: [
+          _buildFoodCategoryFilters(context, provider),
+          _buildListHeader(context, provider),
+          Expanded(
+            child: provider.filteredStores.isEmpty
+                ? const Center(child: Text('표시할 가게가 없습니다.'))
+                : (provider.isGridView
+                ? _buildStoreGridView(context, provider)
+                : _buildStoreListView(context, provider)),
+          ),
+        ],
       ),
     );
   }
 
-  AppBar _buildAppBar(BuildContext context, StoreProvider provider) {
+  AppBar _buildDefaultAppBar(BuildContext context, StoreProvider provider) {
     return AppBar(
-      // ✨ 2. AppBar 스타일 수정
       backgroundColor: AppColors.white,
-      foregroundColor: AppColors.black, // title, actions 아이콘 색상 등을 한번에 지정
-      elevation: 0, // 앱바 아래 그림자 제거
+      foregroundColor: AppColors.black,
+      elevation: 0,
       title: Text(provider.selectedLocation, style: AppTextStyles.title20SemiBold),
       centerTitle: true,
-      actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.search))],
+      actions: [
+        IconButton(
+          onPressed: () => setState(() => _isSearching = true),
+          icon: const Icon(Icons.search),
+        ),
+      ],
+    );
+  }
+
+  AppBar _buildSearchAppBar(BuildContext context, StoreProvider provider) {
+    return AppBar(
+      backgroundColor: AppColors.white,
+      foregroundColor: AppColors.black,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: () {
+          setState(() {
+            _isSearching = false;
+            _searchController.clear();
+            provider.updateSearchQuery('');
+          });
+        },
+      ),
+      title: TextField(
+        controller: _searchController,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: '가게 이름으로 검색...',
+          border: InputBorder.none,
+        ),
+        onChanged: provider.updateSearchQuery,
+      ),
     );
   }
 
   Widget _buildFoodCategoryFilters(BuildContext context, StoreProvider provider) {
-    // ... 기존과 동일
-    final categories = ['한식', '중식', '양식', '일식', '분식'];
+    final categories = ['한식', '중식', '일식', '양식', '기타'];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: Row(
@@ -87,9 +165,7 @@ class StoreListPage extends StatelessWidget {
           return ChoiceChip(
             label: Text(category),
             selected: isSelected,
-            onSelected: (selected) {
-              provider.selectFoodCategory(category);
-            },
+            onSelected: (selected) => provider.selectFoodCategory(category),
             selectedColor: AppColors.primaryGreen,
             labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
             backgroundColor: Colors.white,
@@ -104,7 +180,6 @@ class StoreListPage extends StatelessWidget {
   }
 
   Widget _buildListHeader(BuildContext context, StoreProvider provider) {
-    // ... 기존과 동일
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
@@ -115,9 +190,7 @@ class StoreListPage extends StatelessWidget {
               const Text('가게 리스트', style: AppTextStyles.subtitle18SemiBold),
               IconButton(
                 icon: Icon(provider.isGridView ? Icons.list : Icons.grid_view),
-                onPressed: () {
-                  provider.toggleViewMode();
-                },
+                onPressed: provider.toggleViewMode,
               ),
             ],
           ),
@@ -140,6 +213,7 @@ class StoreListPage extends StatelessWidget {
   }
 
   Widget _buildStoreGridView(BuildContext context, StoreProvider provider) {
+    final stores = provider.filteredStores;
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -148,20 +222,21 @@ class StoreListPage extends StatelessWidget {
         mainAxisSpacing: 16,
         childAspectRatio: 0.8,
       ),
-      itemCount: provider.filteredStores.length,
+      itemCount: stores.length,
       itemBuilder: (context, index) {
-        final store = provider.filteredStores[index];
+        final store = stores[index];
         return _buildStoreCard(context, store);
       },
     );
   }
 
   Widget _buildStoreListView(BuildContext context, StoreProvider provider) {
+    final stores = provider.filteredStores;
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: provider.filteredStores.length,
+      itemCount: stores.length,
       itemBuilder: (context, index) {
-        final store = provider.filteredStores[index];
+        final store = stores[index];
         return _buildStoreTile(context, store);
       },
     );
@@ -171,9 +246,10 @@ class StoreListPage extends StatelessWidget {
     return GestureDetector(
       onTap: () => _navigateToMenuPage(context, store),
       child: Card(
-        color: AppColors.white, // ✨ 3. Card 배경색 추가
+        color: AppColors.white,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 1.5,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -216,8 +292,9 @@ class StoreListPage extends StatelessWidget {
     return GestureDetector(
       onTap: () => _navigateToMenuPage(context, store),
       child: Card(
-        color: AppColors.white, // ✨ 3. Card 배경색 추가
+        color: AppColors.white,
         margin: const EdgeInsets.only(bottom: 12),
+        elevation: 1.5,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
