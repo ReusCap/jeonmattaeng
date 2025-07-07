@@ -11,8 +11,10 @@ class ApiConfig {
   static String get verifyJwt => '$_base/auth/verify';
 
   // --- User ---
-  static String get updateNickname => '$_base/user/nickname';
-  static String get deleteAccount => '$_base/user/me';
+  static String get userInfo => '$_base/user/userinfo';       // 사용자 정보 반환
+  static String get updateNickname => '$_base/user/nickname';   // 닉네임 수정
+  static String get updateProfileImg => '$_base/user/profileImg'; // 프로필 이미지 수정
+  static String get deleteAccount => '$_base/user/me';          // 회원 탈퇴
 
   // --- Store ---
   static String get stores => '$_base/stores';

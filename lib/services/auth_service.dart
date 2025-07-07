@@ -1,7 +1,8 @@
-// auth_service.dart (최적화 후)
+// auth_service.dart
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart'; // debugPrint 사용
+import 'package:image_picker/image_picker.dart'; // ✨ 이미지 업로드를 위해 추가
 import 'package:jeonmattaeng/config/api_config.dart';
 import 'package:jeonmattaeng/services/kakao_login_service.dart';
 import 'package:jeonmattaeng/utils/secure_storage.dart';
@@ -10,7 +11,7 @@ import 'package:jeonmattaeng/services/dio_client.dart';
 class AuthService {
   static final Dio _dio = DioClient.dio;
 
-  // ✅ 1. isLoggedIn() 메서드 추가 (SplashPage에서 사용)
+  // ✅ 1. isLoggedIn() 메서드 (SplashPage에서 사용)
   /// 앱 시작 시 사용자의 로그인 상태를 확인하는 메서드
   static Future<bool> isLoggedIn() async {
     final token = await SecureStorage.getToken();
@@ -21,14 +22,14 @@ class AuthService {
     return await verifyJwt();
   }
 
-  // ✅ 2. loginWithKakao() 메서드에서 불필요한 파라미터 제거
+  // ✅ 2. loginWithKakao() 메서드
   /// 카카오 로그인 및 서버 인증 처리
-  static Future<bool> loginWithKakao() async { // BuildContext context 제거
+  static Future<bool> loginWithKakao() async {
     final token = await KakaoLoginService.login();
 
     if (token == null) {
       debugPrint('[AuthService] ❌ 카카오 로그인 실패 (token == null)');
-      return false; // 실패 시 false 반환으로 통일
+      return false;
     }
 
     debugPrint('[AuthService] ✅ accessToken: ${token.accessToken}');
@@ -47,7 +48,7 @@ class AuthService {
 
       await SecureStorage.saveToken(jwt);
       return true;
-    } on DioException catch (e) { // DioError 대신 DioException 사용 (최신 버전)
+    } on DioException catch (e) {
       debugPrint('[AuthService] ❌ 서버 통신 실패: $e');
       return false;
     } catch (e) {
@@ -56,17 +57,15 @@ class AuthService {
     }
   }
 
-  // ✅ 3. verifyJwt() 메서드 개선
+  // ✅ 3. verifyJwt() 메서드
   /// 저장된 JWT 토큰의 유효성을 서버에 검증하는 메서드
   static Future<bool> verifyJwt() async {
     try {
-      // DioClient에 인터셉터가 설정되어 있으므로, 헤더를 명시할 필요 없음
-      await _dio.get('${ApiConfig.baseUrl}/auth/verify');
+      await _dio.get(ApiConfig.verifyJwt); // ✨ API 경로 수정
       debugPrint('[AuthService] ✅ JWT 토큰 유효함.');
       return true;
     } catch (e) {
       debugPrint('[AuthService] ❌ JWT 검증 실패: $e');
-      // dio_client의 onError 인터셉터가 토큰을 삭제하지만, 여기서 한 번 더 확인사살
       await SecureStorage.deleteToken();
       return false;
     }
@@ -77,12 +76,59 @@ class AuthService {
     try {
       await _dio.delete(ApiConfig.deleteAccount);
       debugPrint('[AuthService] ✅ 회원 탈퇴 성공');
-      // 탈퇴 성공 시 로컬 토큰도 삭제
       await SecureStorage.deleteToken();
       return true;
     } catch (e) {
       debugPrint('[AuthService] ❌ 회원 탈퇴 실패: $e');
       return false;
+    }
+  }
+
+  // ✨ [추가] 사용자 정보 가져오기
+  static Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      final response = await _dio.get(ApiConfig.userInfo);
+      return response.data;
+    } on DioException catch (e) {
+      debugPrint('[AuthService] ❌ getUserProfile 실패: $e');
+      return null;
+    }
+  }
+
+  // ✨ [추가] 닉네임 변경하기
+  static Future<void> updateNickname(String nickname) async {
+    try {
+      await _dio.post(
+        ApiConfig.updateNickname,
+        data: {'nickname': nickname},
+      );
+      debugPrint('[AuthService] ✅ 닉네임 변경 성공');
+    } on DioException catch (e) {
+      debugPrint('[AuthService] ❌ updateNickname 실패: $e');
+      rethrow; // 에러를 다시 던져서 Provider에서 처리하게 함
+    }
+  }
+
+  // ✨ [추가] 프로필 이미지 업로드하기
+  static Future<String?> updateProfileImage(XFile image) async {
+    try {
+      final formData = FormData.fromMap({
+        'profileImg': await MultipartFile.fromFile(image.path, filename: image.name),
+      });
+
+      final response = await _dio.post(
+        ApiConfig.updateProfileImg,
+        data: formData,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        debugPrint('[AuthService] ✅ 프로필 이미지 업로드 성공');
+        return response.data['profileImgUrl'];
+      }
+      return null;
+    } on DioException catch (e) {
+      debugPrint('[AuthService] ❌ updateProfileImage 실패: $e');
+      return null;
     }
   }
 }
