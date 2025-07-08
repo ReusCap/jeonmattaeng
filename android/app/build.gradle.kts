@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.enryu11.jeonmattaeng"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23 // flutter.minSdkVersion 대신 직접 23으로 설정
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -32,6 +32,9 @@ android {
             keyPassword = keystoreProperties["keyPassword"] as String
             storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
             storePassword = keystoreProperties["storePassword"] as String
+            // 아래와 같이 수정
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 
