@@ -7,11 +7,13 @@ import 'package:jeonmattaeng/config/api_config.dart';
 import 'package:jeonmattaeng/services/kakao_login_service.dart';
 import 'package:jeonmattaeng/utils/secure_storage.dart';
 import 'package:jeonmattaeng/services/dio_client.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 class AuthService {
   static final Dio _dio = DioClient.dio;
 
-  // ✅ 1. isLoggedIn() 메서드 (SplashPage에서 사용)
+  // 1. isLoggedIn() 메서드 (SplashPage에서 사용)
   /// 앱 시작 시 사용자의 로그인 상태를 확인하는 메서드
   static Future<bool> isLoggedIn() async {
     final token = await SecureStorage.getToken();
@@ -22,7 +24,7 @@ class AuthService {
     return await verifyJwt();
   }
 
-  // ✅ 2. loginWithKakao() 메서드
+  // 2. loginWithKakao() 메서드
   /// 카카오 로그인 및 서버 인증 처리
   static Future<bool> loginWithKakao() async {
     final token = await KakaoLoginService.login();
@@ -57,7 +59,7 @@ class AuthService {
     }
   }
 
-  // ✅ 3. verifyJwt() 메서드
+  // 3. verifyJwt() 메서드
   /// 저장된 JWT 토큰의 유효성을 서버에 검증하는 메서드
   static Future<bool> verifyJwt() async {
     try {
@@ -84,7 +86,7 @@ class AuthService {
     }
   }
 
-  // ✨ [추가] 사용자 정보 가져오기
+  // 사용자 정보 가져오기
   static Future<Map<String, dynamic>?> getUserProfile() async {
     try {
       final response = await _dio.get(ApiConfig.userInfo);
@@ -95,7 +97,7 @@ class AuthService {
     }
   }
 
-  // ✨ [추가] 닉네임 변경하기
+  // 닉네임 변경하기
   static Future<void> updateNickname(String nickname) async {
     try {
       await _dio.post(
@@ -109,11 +111,26 @@ class AuthService {
     }
   }
 
-  // ✨ [추가] 프로필 이미지 업로드하기
+  // 프로필 이미지 업로드하기
+  // 프로필 이미지를 서버에 업로드하고 URL을 반환합니다.
   static Future<String?> updateProfileImage(XFile image) async {
+    // 디버깅을 위해 서버로 보내는 파일 정보를 출력합니다.
+    debugPrint('--- 서버로 보내는 파일 정보 ---');
+    debugPrint('파일 경로 (Path): ${image.path}');
+    debugPrint('파일 이름 (Name): ${image.name}');
+
+    final mimeType = lookupMimeType(image.path);
+    debugPrint('찾아낸 MIME 타입 (MimeType): $mimeType');
+    debugPrint('--------------------------');
+
     try {
       final formData = FormData.fromMap({
-        'profileImg': await MultipartFile.fromFile(image.path, filename: image.name),
+        'profileImg': await MultipartFile.fromFile(
+          image.path,
+          filename: image.name,
+          // ContentType을 명시적으로 지정합니다.
+          contentType: mimeType != null ? MediaType.parse(mimeType) : null,
+        ),
       });
 
       final response = await _dio.post(
@@ -126,6 +143,7 @@ class AuthService {
         return response.data['profileImgUrl'];
       }
       return null;
+
     } on DioException catch (e) {
       debugPrint('[AuthService] ❌ updateProfileImage 실패: $e');
       return null;
