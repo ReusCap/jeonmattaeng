@@ -1,5 +1,3 @@
-// lib/pages/store_list_page.dart
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/store_model.dart';
@@ -9,7 +7,6 @@ import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
 import 'package:provider/provider.dart';
 
-// ✨ 1. Provider를 생성하고 제공하는 역할만 하는 StatelessWidget
 class StoreListPage extends StatelessWidget {
   final String selectedLocation;
   final String? initialSearchQuery;
@@ -24,43 +21,16 @@ class StoreListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => StoreProvider()
-      // ✨ 2. StoreListPage가 생성될 때 fetchStores를 호출하여 데이터 로딩 시작
         ..fetchStores()
         ..selectLocation(selectedLocation)
         ..updateSearchQuery(initialSearchQuery ?? ''),
-      // ✨ 3. 실제 UI는 아래의 _StoreListPageView 위젯이 담당
-      child: _StoreListPageView(initialSearchQuery: initialSearchQuery),
+      child: const _StoreListPageView(),
     );
   }
 }
 
-// ✨ 4. UI와 상태를 관리하는 별도의 StatefulWidget
-class _StoreListPageView extends StatefulWidget {
-  final String? initialSearchQuery;
-  const _StoreListPageView({this.initialSearchQuery});
-
-  @override
-  State<_StoreListPageView> createState() => _StoreListPageViewState();
-}
-
-class _StoreListPageViewState extends State<_StoreListPageView> {
-  bool _isSearching = false;
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialSearchQuery != null && widget.initialSearchQuery!.isNotEmpty) {
-      _isSearching = true;
-      _searchController.text = widget.initialSearchQuery!;
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+class _StoreListPageView extends StatelessWidget {
+  const _StoreListPageView();
 
   void _navigateToMenuPage(BuildContext context, Store store) async {
     final bool? didLikeChange = await Navigator.push<bool>(
@@ -85,76 +55,27 @@ class _StoreListPageViewState extends State<_StoreListPageView> {
 
   @override
   Widget build(BuildContext context) {
-    // ✨ 5. Consumer를 통해 Provider의 데이터와 상태 변화를 감지
     final provider = context.watch<StoreProvider>();
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: _isSearching
-          ? _buildSearchAppBar(context, provider)
-          : _buildDefaultAppBar(context, provider),
-      body: provider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-        children: [
-          _buildFoodCategoryFilters(context, provider),
-          _buildListHeader(context, provider),
-          Expanded(
-            child: provider.filteredStores.isEmpty
-                ? const Center(child: Text('표시할 가게가 없습니다.'))
-                : (provider.isGridView
-                ? _buildStoreGridView(context, provider)
-                : _buildStoreListView(context, provider)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  AppBar _buildDefaultAppBar(BuildContext context, StoreProvider provider) {
-    return AppBar(
-      backgroundColor: AppColors.white,
-      foregroundColor: AppColors.black,
-      elevation: 0,
-      title: Text(provider.selectedLocation, style: AppTextStyles.title20SemiBold),
-      centerTitle: true,
-      actions: [
-        IconButton(
-          onPressed: () => setState(() => _isSearching = true),
-          icon: const Icon(Icons.search),
+    return provider.isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+      children: [
+        _buildFoodCategoryFilters(context, provider),
+        _buildListHeader(context, provider),
+        Expanded(
+          child: provider.filteredStores.isEmpty
+              ? const Center(child: Text('표시할 가게가 없습니다.'))
+              : (provider.isGridView
+              ? _buildStoreGridView(context, provider)
+              : _buildStoreListView(context, provider)),
         ),
       ],
     );
   }
 
-  AppBar _buildSearchAppBar(BuildContext context, StoreProvider provider) {
-    return AppBar(
-      backgroundColor: AppColors.white,
-      foregroundColor: AppColors.black,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: () {
-          setState(() {
-            _isSearching = false;
-            _searchController.clear();
-            provider.updateSearchQuery('');
-          });
-        },
-      ),
-      title: TextField(
-        controller: _searchController,
-        autofocus: true,
-        decoration: const InputDecoration(
-          hintText: '가게 이름으로 검색...',
-          border: InputBorder.none,
-        ),
-        onChanged: provider.updateSearchQuery,
-      ),
-    );
-  }
-
-  Widget _buildFoodCategoryFilters(BuildContext context, StoreProvider provider) {
+  Widget _buildFoodCategoryFilters(
+      BuildContext context, StoreProvider provider) {
     final categories = ['한식', '중식', '일식', '양식', '기타'];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -167,7 +88,8 @@ class _StoreListPageViewState extends State<_StoreListPageView> {
             selected: isSelected,
             onSelected: (selected) => provider.selectFoodCategory(category),
             selectedColor: AppColors.primaryGreen,
-            labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+            labelStyle:
+            TextStyle(color: isSelected ? Colors.white : Colors.black),
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -266,11 +188,16 @@ class _StoreListPageViewState extends State<_StoreListPageView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(store.name, style: AppTextStyles.body16Bold, overflow: TextOverflow.ellipsis),
-                  Text(store.foodCategory, style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)),
+                  Text(store.name,
+                      style: AppTextStyles.body16Bold,
+                      overflow: TextOverflow.ellipsis),
+                  Text(store.foodCategory,
+                      style: AppTextStyles.caption14Medium
+                          .copyWith(color: AppColors.grey)),
                   Row(
                     children: [
-                      const Icon(Icons.favorite, color: AppColors.heartRed, size: 14),
+                      const Icon(Icons.favorite,
+                          color: AppColors.heartRed, size: 14),
                       const SizedBox(width: 2),
                       Text(store.likeSum.toString()),
                       const SizedBox(width: 8),
@@ -304,15 +231,19 @@ class _StoreListPageViewState extends State<_StoreListPageView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(store.name, style: AppTextStyles.title20SemiBold),
-                    Text(store.foodCategory, style: AppTextStyles.body16Regular.copyWith(color: AppColors.grey)),
+                    Text(store.foodCategory,
+                        style: AppTextStyles.body16Regular
+                            .copyWith(color: AppColors.grey)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.favorite, color: AppColors.heartRed, size: 16),
+                        const Icon(Icons.favorite,
+                            color: AppColors.heartRed, size: 16),
                         const SizedBox(width: 4),
                         Text(store.likeSum.toString()),
                         const SizedBox(width: 12),
-                        const Icon(Icons.comment, color: AppColors.grey, size: 16),
+                        const Icon(Icons.comment,
+                            color: AppColors.grey, size: 16),
                         const SizedBox(width: 4),
                         const Text('0'),
                       ],

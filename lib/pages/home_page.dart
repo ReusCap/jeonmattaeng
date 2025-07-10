@@ -5,14 +5,19 @@ import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
 
 class HomePage extends StatefulWidget {
+  // 부모로부터 Key를 받기 위해 생성자 수정
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+// 클래스 이름 앞에 _(언더스코어)를 붙여 private으로 만듦
+class HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
+
+  String? _selectedLocation;
+  String? _initialSearchQuery;
 
   @override
   void dispose() {
@@ -20,20 +25,57 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // 1. MainTabPage에서 호출할 수 있는 공용(public) 초기화 함수
+  void reset() {
+    _goBackToHome();
+  }
+
+  // 내부적으로 사용하는 비공개(private) 초기화 함수
+  void _goBackToHome() {
+    setState(() {
+      _selectedLocation = null;
+      _initialSearchQuery = null;
+      _searchController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildTopHeader(context),
-            _buildLocationButtons(context),
-            const SizedBox(height: 16),
-            _buildRecommendCard(context),
-            const SizedBox(height: 24),
-          ],
+      appBar: _selectedLocation == null
+          ? null
+          : AppBar(
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _goBackToHome,
         ),
+        title:
+        Text(_selectedLocation!, style: AppTextStyles.title20SemiBold),
+        centerTitle: true,
+      ),
+      body: _selectedLocation == null
+          ? _buildHomeContent()
+          : StoreListPage(
+        selectedLocation: _selectedLocation!,
+        initialSearchQuery: _initialSearchQuery,
+      ),
+    );
+  }
+
+  Widget _buildHomeContent() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildTopHeader(context),
+          _buildLocationButtons(context),
+          const SizedBox(height: 16),
+          _buildRecommendCard(context),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -41,7 +83,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildTopHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 40),
+      padding: EdgeInsets.fromLTRB(
+          16, MediaQuery.of(context).padding.top + 16, 16, 40),
       decoration: const BoxDecoration(
         color: Color(0xFFA0CD9A),
         borderRadius: BorderRadius.only(
@@ -51,7 +94,8 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
         children: [
-          Text('전맛탱', style: AppTextStyles.title24Bold.copyWith(color: AppColors.white)),
+          Text('전맛탱',
+              style: AppTextStyles.title24Bold.copyWith(color: AppColors.white)),
           const SizedBox(height: 16),
           TextField(
             controller: _searchController,
@@ -68,15 +112,10 @@ class _HomePageState extends State<HomePage> {
             ),
             onSubmitted: (query) {
               if (query.isNotEmpty) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StoreListPage(
-                      selectedLocation: '전체',
-                      initialSearchQuery: query,
-                    ),
-                  ),
-                );
+                setState(() {
+                  _selectedLocation = '전체';
+                  _initialSearchQuery = query;
+                });
               }
             },
           ),
@@ -89,8 +128,6 @@ class _HomePageState extends State<HomePage> {
     return Transform.translate(
       offset: const Offset(0.0, -20.0),
       child: Container(
-        // ✨ 1. 좌우 마진(margin)을 제거하여 화면에 꽉 차게 만듭니다.
-        // margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -110,9 +147,13 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _locationButton(context, '후문', 'assets/icons/전대후문.png')),
-                Expanded(child: _locationButton(context, '상대', 'assets/icons/상대.png')),
-                Expanded(child: _locationButton(context, '정문', 'assets/icons/정문.png')),
+                Expanded(
+                    child:
+                    _locationButton(context, '후문', 'assets/icons/전대후문.png')),
+                Expanded(
+                    child: _locationButton(context, '상대', 'assets/icons/상대.png')),
+                Expanded(
+                    child: _locationButton(context, '정문', 'assets/icons/정문.png')),
               ],
             ),
           ],
@@ -121,15 +162,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _locationButton(BuildContext context, String locationName, String iconPath) {
+  Widget _locationButton(
+      BuildContext context, String locationName, String iconPath) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StoreListPage(selectedLocation: locationName),
-          ),
-        );
+        setState(() {
+          _selectedLocation = locationName;
+        });
       },
       child: Column(
         children: [
@@ -142,7 +181,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecommendCard(BuildContext context) {
-    // ✨ 2. 좌우 패딩(Padding)을 제거하여 화면에 꽉 차게 만듭니다.
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -151,7 +189,6 @@ class _HomePageState extends State<HomePage> {
         );
       },
       child: Container(
-        // ✨ Container 자체에 마진을 주어 다른 위젯과의 간격을 조정합니다.
         margin: const EdgeInsets.symmetric(horizontal: 16.0),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -160,7 +197,6 @@ class _HomePageState extends State<HomePage> {
           border: Border.all(color: const Color(0xFF81C784), width: 1.5),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset('assets/image/메뉴추천.png', width: 60, height: 60),
             const SizedBox(width: 16),
@@ -171,10 +207,12 @@ class _HomePageState extends State<HomePage> {
                   const Text('오늘 뭐 먹지?', style: AppTextStyles.subtitle18SemiBold),
                   const SizedBox(height: 4),
                   Text('고민된다면 메뉴를 추천받아 보세요!',
-                      style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)),
+                      style: AppTextStyles.caption14Medium
+                          .copyWith(color: AppColors.grey)),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF96A81),
                       borderRadius: BorderRadius.circular(30),
@@ -188,7 +226,8 @@ class _HomePageState extends State<HomePage> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12)),
                         SizedBox(width: 6),
-                        Icon(Icons.arrow_forward_ios, color: Colors.white, size: 12),
+                        Icon(Icons.arrow_forward_ios,
+                            color: Colors.white, size: 12),
                       ],
                     ),
                   )
