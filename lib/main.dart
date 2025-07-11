@@ -1,4 +1,4 @@
-// lib/main.dart
+// lib/main.dart (수정본)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,9 +8,7 @@ import 'package:jeonmattaeng/pages/login_page.dart';
 import 'package:jeonmattaeng/pages/main_tab_page.dart';
 import 'package:jeonmattaeng/pages/splash_page.dart';
 import 'package:jeonmattaeng/constants/routes.dart';
-// ✨ StoreProvider와 Provider 관련 임포트를 제거합니다.
-// import 'package:jeonmattaeng/providers/store_provider.dart';
-// import 'package:provider/provider.dart';
+import 'package:jeonmattaeng/theme/app_colors.dart'; // ✅ AppColors 임포트
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
@@ -24,7 +22,6 @@ Future<void> main() async {
   }
   KakaoSdk.init(nativeAppKey: kakaoKey);
 
-  // ✨ MultiProvider를 제거하고 MyApp만 실행하여 앱 시작을 가볍게 만듭니다.
   runApp(const MyApp());
 }
 
@@ -36,6 +33,22 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '전맛탱',
       debugShowCheckedModeBanner: false,
+
+      // ✅ theme 속성을 추가하여 앱 전체 테마를 정의합니다.
+      theme: ThemeData(
+          useMaterial3: true, // 머티리얼3 디자인 사용
+          // 앱의 기본 색상 팔레트를 정의합니다.
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.white),
+          // 모든 페이지의 기본 배경색을 흰색으로 지정합니다.
+          scaffoldBackgroundColor: AppColors.white,
+          // 앱바 테마 등 추가적인 테마 설정도 가능합니다.
+          appBarTheme: const AppBarTheme(
+            backgroundColor: AppColors.white,
+            foregroundColor: AppColors.white,
+            elevation: 0.5,
+          )
+      ),
+
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (_) => const SplashPage(),

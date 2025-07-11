@@ -1,6 +1,3 @@
-// lib/pages/menu_page.dart (최종 통일본)
-
-import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/menu_model.dart';
@@ -112,48 +109,6 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     }
   }
 
-  // 가게 정보 UI
-  Widget _buildStoreInfo() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(widget.storeName, style: AppTextStyles.title24Bold),
-                const SizedBox(width: 8),
-                Text(widget.storeCategory,
-                    style: AppTextStyles.body16Regular
-                        .copyWith(color: AppColors.categoryGrey)),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
-                const SizedBox(width: 4),
-                Text(_storeLikeCount.toString(),
-                    style: AppTextStyles.caption14Medium
-                        .copyWith(color: AppColors.heartRed)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text('분류: ${widget.storeLocationCategory}',
-                style: AppTextStyles.body16Regular
-                    .copyWith(color: AppColors.black54)),
-            const SizedBox(height: 2),
-            Text('주소: ${widget.storeLocation}',
-                style: AppTextStyles.body16Regular
-                    .copyWith(color: AppColors.black54)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 인기 메뉴 섹션 UI
   Widget _buildTopMenusSection(List<Menu> menus) {
     if (menus.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
@@ -178,7 +133,6 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
                   onTap: () async {
                     _navigateToReviewPage(
                       menu: menu,
-                      // ✅ 인기 메뉴이므로 순위 정보를 전달합니다.
                       rank: index + 1,
                     );
                   },
@@ -225,7 +179,6 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     );
   }
 
-  // 메인 메뉴 리스트 UI
   Widget _buildMainMenuList(List<Menu> menus) {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
@@ -235,7 +188,6 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
             onTap: () async {
               _navigateToReviewPage(
                 menu: menu,
-                // ✅ 메인 메뉴는 순위 정보가 없으므로 null 전달
                 rank: null,
               );
             },
@@ -272,7 +224,6 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     );
   }
 
-  // 이미지 캐싱 위젯
   Widget _buildCachedImage(String imageUrl, double width, double height) {
     return CachedNetworkImage(
       imageUrl: imageUrl,
@@ -293,7 +244,6 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
     );
   }
 
-  // ReviewPage로 이동하고, 돌아왔을 때 상태를 업데이트하는 함수
   void _navigateToReviewPage({required Menu menu, required int? rank}) async {
     final result = await Navigator.push<Menu>(
       context,
@@ -332,64 +282,76 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
         backgroundColor: AppColors.white,
         body: Stack(
           children: [
-            CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  expandedHeight: MediaQuery.of(context).size.height / 5,
-                  pinned: true,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppColors.white),
-                    onPressed: () => Navigator.pop(context, _didLikeChange),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.black45,
+            ScrollConfiguration(
+              behavior: _NoGlowScrollBehavior(),
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    expandedHeight: MediaQuery.of(context).size.height / 5,
+                    pinned: true,
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: AppColors.white),
+                      onPressed: () => Navigator.pop(context, _didLikeChange),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.black45,
+                      ),
+                    ),
+                    flexibleSpace: FlexibleSpaceBar(
+                        background: _buildCachedImage(widget.storeImage,
+                            double.infinity,
+                            MediaQuery.of(context).size.height / 5)),
+                  ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StoreInfoDelegate(
+                      storeName: widget.storeName,
+                      storeCategory: widget.storeCategory,
+                      storeLikeCount: _storeLikeCount,
+                      storeLocationCategory: widget.storeLocationCategory,
+                      storeLocation: widget.storeLocation,
                     ),
                   ),
-                  flexibleSpace: FlexibleSpaceBar(
-                      background: _buildCachedImage(widget.storeImage,
-                          double.infinity,
-                          MediaQuery.of(context).size.height / 5)),
-                ),
-                _buildStoreInfo(),
-                FutureBuilder<List<Menu>>(
-                  future: _menusFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const SliverToBoxAdapter(
-                          child: Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(50.0),
-                                child: CircularProgressIndicator(),
-                              )));
-                    }
-                    if (snapshot.hasError) {
-                      return SliverToBoxAdapter(
-                          child: Center(
-                              child: Text('에러가 발생했습니다: ${snapshot.error}')));
-                    }
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      _menus = [];
-                      return const SliverToBoxAdapter(
-                          child: Center(child: Text('메뉴 정보가 없습니다.')));
-                    }
+                  FutureBuilder<List<Menu>>(
+                    future: _menusFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const SliverToBoxAdapter(
+                            child: Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(50.0),
+                                  child: CircularProgressIndicator(),
+                                )));
+                      }
+                      if (snapshot.hasError) {
+                        return SliverToBoxAdapter(
+                            child: Center(
+                                child: Text('에러가 발생했습니다: ${snapshot.error}')));
+                      }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        _menus = [];
+                        return const SliverToBoxAdapter(
+                            child: Center(child: Text('메뉴 정보가 없습니다.')));
+                      }
 
-                    if (_menus == null) {
-                      _menus = snapshot.data!;
-                    }
+                      if (_menus == null) {
+                        _menus = snapshot.data!;
+                      }
 
-                    return SliverMainAxisGroup(slivers: [
-                      _buildTopMenusSection(_menus!),
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          child: Text('메인 메뉴',
-                              style: AppTextStyles.subtitle18SemiBold),
+                      return SliverMainAxisGroup(slivers: [
+                        _buildTopMenusSection(_menus!),
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                            child: Text('메인 메뉴',
+                                style: AppTextStyles.subtitle18SemiBold),
+                          ),
                         ),
-                      ),
-                      _buildMainMenuList(_menus!),
-                    ]);
-                  },
-                ),
-              ],
+                        _buildMainMenuList(_menus!),
+                      ]);
+                    },
+                  ),
+                ],
+              ),
             ),
             if (_showPopup)
               Positioned(
@@ -424,5 +386,86 @@ class _MenuPageState extends State<MenuPage> with RouteAware {
         ),
       ),
     );
+  }
+}
+
+class _StoreInfoDelegate extends SliverPersistentHeaderDelegate {
+  final String storeName;
+  final String storeCategory;
+  final int storeLikeCount;
+  final String storeLocationCategory;
+  final String storeLocation;
+
+  _StoreInfoDelegate({
+    required this.storeName,
+    required this.storeCategory,
+    required this.storeLikeCount,
+    required this.storeLocationCategory,
+    required this.storeLocation,
+  });
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppColors.white,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Text(storeName, style: AppTextStyles.title24Bold),
+              const SizedBox(width: 8),
+              Text(storeCategory,
+                  style: AppTextStyles.body16Regular
+                      .copyWith(color: AppColors.categoryGrey)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.favorite, size: 16, color: AppColors.heartRed),
+              const SizedBox(width: 4),
+              Text(storeLikeCount.toString(),
+                  style: AppTextStyles.caption14Medium
+                      .copyWith(color: AppColors.heartRed)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('분류: $storeLocationCategory',
+              style: AppTextStyles.body16Regular
+                  .copyWith(color: AppColors.black54)),
+          const SizedBox(height: 2),
+          Text('주소: $storeLocation',
+              style: AppTextStyles.body16Regular
+                  .copyWith(color: AppColors.black54)),
+        ],
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => 150;
+
+  @override
+  double get minExtent => 150;
+
+  @override
+  bool shouldRebuild(covariant _StoreInfoDelegate oldDelegate) {
+    return storeName != oldDelegate.storeName ||
+        storeCategory != oldDelegate.storeCategory ||
+        storeLikeCount != oldDelegate.storeLikeCount ||
+        storeLocationCategory != oldDelegate.storeLocationCategory ||
+        storeLocation != oldDelegate.storeLocation;
+  }
+}
+
+class _NoGlowScrollBehavior extends ScrollBehavior {
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
   }
 }
