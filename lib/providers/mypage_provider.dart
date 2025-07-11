@@ -1,30 +1,18 @@
-// lib/providers/mypage_provider.dart
+// lib/providers/mypage_provider.dart (수정본)
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:jeonmattaeng/services/auth_service.dart';
+import 'package:jeonmattaeng/models/user_model.dart'; // ✅ User 모델 임포트
+import 'package:jeonmattaeng/services/user_service.dart';
 
-// 사용자 프로필 데이터를 담을 모델 클래스
-class UserProfile {
-  final String nickname;
-  final String? profileImageUrl;
-
-  UserProfile({required this.nickname, this.profileImageUrl});
-
-  factory UserProfile.fromJson(Map<String, dynamic> json) {
-    return UserProfile(
-      nickname: json['nickname'] ?? '익명',
-      profileImageUrl: json['profileImgUrl'],
-    );
-  }
-}
+// ✅ 기존 UserProfile 클래스는 삭제합니다.
 
 class MyPageProvider with ChangeNotifier {
-  UserProfile? _userProfile;
+  User? _user; // ✅ UserProfile -> User
   bool _isLoading = false;
-  bool _isUploading = false; // 이미지 업로드 상태
+  bool _isUploading = false;
 
-  UserProfile? get userProfile => _userProfile;
+  User? get user => _user; // ✅ userProfile -> user
   bool get isLoading => _isLoading;
   bool get isUploading => _isUploading;
 
@@ -36,9 +24,9 @@ class MyPageProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final profileData = await AuthService.getUserProfile();
+      final profileData = await UserService.getUserProfile();
       if (profileData != null) {
-        _userProfile = UserProfile.fromJson(profileData);
+        _user = User.fromJson(profileData); // ✅ User.fromJson 사용
       }
     } catch (e) {
       print('[MyPageProvider] 사용자 정보 불러오기 실패: $e');
@@ -49,8 +37,8 @@ class MyPageProvider with ChangeNotifier {
 
   Future<bool> updateNickname(String newNickname) async {
     try {
-      await AuthService.updateNickname(newNickname);
-      _userProfile = UserProfile(nickname: newNickname, profileImageUrl: _userProfile?.profileImageUrl);
+      await UserService.updateNickname(newNickname);
+      _user = _user?.copyWith(nickname: newNickname); // ✅ copyWith로 닉네임만 변경
       notifyListeners();
       return true;
     } catch (e) {
@@ -63,21 +51,20 @@ class MyPageProvider with ChangeNotifier {
     _isUploading = true;
     notifyListeners();
     try {
-      final newImageUrl = await AuthService.updateProfileImage(image);
+      // ✅ updateProfileImage는 'profileImgUrl'을 반환하므로 이 부분은 그대로 둡니다.
+      final newImageUrl = await UserService.updateProfileImage(image);
       if (newImageUrl != null) {
-        _userProfile = UserProfile(nickname: _userProfile!.nickname, profileImageUrl: newImageUrl);
-        _isUploading = false;
+        _user = _user?.copyWith(profileImageUrl: newImageUrl); // ✅ copyWith로 이미지 URL만 변경
         notifyListeners();
         return true;
       }
-      _isUploading = false;
-      notifyListeners();
       return false;
     } catch (e) {
       print('[MyPageProvider] 프로필 이미지 수정 실패: $e');
+      return false;
+    } finally {
       _isUploading = false;
       notifyListeners();
-      return false;
     }
   }
 }

@@ -145,7 +145,7 @@ class HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                     child:
-                    _locationButton(context, '후문', 'assets/icons/전대후문.png')),
+                    _locationButton(context, '후문', 'assets/icons/후문.png')),
                 Expanded(
                     child: _locationButton(context, '상대', 'assets/icons/상대.png')),
                 Expanded(

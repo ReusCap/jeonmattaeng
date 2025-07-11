@@ -1,5 +1,3 @@
-// lib/pages/mypage.dart
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,7 +26,8 @@ class _MyPageView extends StatelessWidget {
 
   // 닉네임 수정 다이얼로그 표시
   void _showNicknameDialog(BuildContext context, MyPageProvider provider) {
-    final controller = TextEditingController(text: provider.userProfile?.nickname ?? '');
+    // ✅ provider.userProfile -> provider.user로 변경
+    final controller = TextEditingController(text: provider.user?.nickname ?? '');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -77,7 +76,8 @@ class _MyPageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MyPageProvider>();
-    final userProfile = provider.userProfile;
+    // ✅ userProfile -> user로 변경
+    final user = provider.user;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -88,7 +88,8 @@ class _MyPageView extends StatelessWidget {
         backgroundColor: AppColors.white,
         foregroundColor: AppColors.black,
       ),
-      body: provider.isLoading && userProfile == null
+      // ✅ userProfile -> user로 변경
+      body: provider.isLoading && user == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
         children: [
@@ -104,10 +105,12 @@ class _MyPageView extends StatelessWidget {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: AppColors.unclickGrey,
-                      backgroundImage: userProfile?.profileImageUrl != null
-                          ? CachedNetworkImageProvider(userProfile!.profileImageUrl!)
+                      // ✅ userProfile -> user로 변경하고, 빈 문자열("")도 처리하도록 조건 추가
+                      backgroundImage: user?.profileImageUrl != null && user!.profileImageUrl.isNotEmpty
+                          ? CachedNetworkImageProvider(user.profileImageUrl)
                           : null,
-                      child: userProfile?.profileImageUrl == null
+                      // ✅ userProfile -> user로 변경하고, 빈 문자열("")도 처리하도록 조건 추가
+                      child: user?.profileImageUrl == null || user!.profileImageUrl.isEmpty
                           ? const Icon(Icons.person, size: 60, color: AppColors.grey)
                           : null,
                     ),
@@ -127,7 +130,8 @@ class _MyPageView extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(userProfile?.nickname ?? '로딩 중...', style: AppTextStyles.title24Bold),
+                    // ✅ userProfile -> user로 변경
+                    Text(user?.nickname ?? '로딩 중...', style: AppTextStyles.title24Bold),
                     const SizedBox(width: 8),
                     const Icon(Icons.edit, size: 24, color: AppColors.grey),
                   ],
@@ -153,7 +157,7 @@ class _MyPageView extends StatelessWidget {
                   ],
                 ),
               );
-              if (confirm == true) {
+              if (confirm == true && context.mounted) {
                 await SecureStorage.deleteToken();
                 Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
               }
