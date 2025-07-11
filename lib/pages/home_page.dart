@@ -84,13 +84,9 @@ class HomePageState extends State<HomePage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
-          16, MediaQuery.of(context).padding.top + 16, 16, 40),
+          16, MediaQuery.of(context).padding.top + 16, 16, 30),
       decoration: const BoxDecoration(
         color: Color(0xFFA0CD9A),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
       ),
       child: Column(
         children: [
