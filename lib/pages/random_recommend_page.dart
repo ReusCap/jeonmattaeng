@@ -1,3 +1,6 @@
+// lib/pages/random_recommend_page.dart
+
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/store_model.dart';
@@ -5,6 +8,13 @@ import 'package:jeonmattaeng/pages/menu_page.dart';
 import 'package:jeonmattaeng/services/store_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
+
+// ✨ 화면의 상태를 명확하게 관리하기 위한 Enum 정의
+enum RecommendState {
+  initial, // 초기 상태
+  loading, // 로딩 및 셔플 중
+  revealed, // 결과가 공개된 상태
+}
 
 class RandomRecommendPage extends StatefulWidget {
   const RandomRecommendPage({super.key});
@@ -16,38 +26,91 @@ class RandomRecommendPage extends StatefulWidget {
 class _RandomRecommendPageState extends State<RandomRecommendPage> {
   String _selectedLocation = '후문';
   Store? _recommendedStore;
-  bool _isLoading = false;
   String? _errorMessage;
 
-  // 서버에서 랜덤 가게 정보를 가져오는 함수
+  // ✨ 여러 bool 변수 대신 하나의 상태(State) 변수로 관리
+  RecommendState _state = RecommendState.initial;
+
+  late PageController _pageController;
+  Timer? _animationTimer;
+  final List<String> _placeholderCategories = ['한식', '일식', '중식', '양식', '기타'];
+  final int _pageCount = 100;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.8);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _animationTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _fetchRandomStore() async {
     setState(() {
-      _isLoading = true;
+      _state = RecommendState.loading;
       _errorMessage = null;
-      // 추천을 시작하면 이전 가게 정보는 초기화
-      // _recommendedStore = null;
+      _recommendedStore = null;
+    });
+
+    // 1단계: 고속 셔플 애니메이션
+    _animationTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (!_pageController.hasClients) return;
+      final randomPage = Random().nextInt(_pageCount);
+      _pageController.animateToPage(
+        randomPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
 
     try {
       final store = await StoreService.getRecommendedStore(_selectedLocation);
-      // [수정] 서버에서 데이터를 제대로 받아왔는지 확인
       if (store == null) {
         throw Exception('해당 위치에 추천할 가게를 찾지 못했습니다.');
       }
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+      _animationTimer?.cancel();
+
+      // 2단계: 결과 카테고리에 맞춰 중앙으로 감속하며 멈추기
+      final resultCategory = store.foodCategory;
+      final categoryIndex = _placeholderCategories.indexOf(resultCategory);
+      final currentPage = _pageController.page?.round() ?? 0;
+
+      int targetPage = (currentPage ~/ 5) * 5 + categoryIndex;
+      if (targetPage <= currentPage) {
+        targetPage += 5;
+      }
+
+      if (_pageController.hasClients) {
+        await _pageController.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.decelerate,
+        );
+      }
+
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      // 3단계: 결과 공개! (UI가 바뀌고 버튼이 나타남)
       setState(() {
         _recommendedStore = store;
-        _isLoading = false;
+        _state = RecommendState.revealed;
       });
+
     } catch (e) {
+      _animationTimer?.cancel();
       setState(() {
-        _errorMessage = '추천 가게를 불러오는데 실패했어요. 😢\n다시 시도해주세요.';
-        _isLoading = false;
-        _recommendedStore = null; // 에러 발생 시 초기 상태로
+        _errorMessage = e.toString();
+        _state = RecommendState.initial; // 에러 시 초기 상태로
       });
     }
   }
 
-  // 가게 메뉴 목록 페이지로 이동하는 함수
   void _navigateToMenuPage(Store store) {
     Navigator.push(
       context,
@@ -65,7 +128,6 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
     );
   }
 
-  // 카테고리에 맞는 로컬 이미지 경로를 반환하는 함수
   String _getFoodCategoryImagePath(String? category) {
     switch (category) {
       case '한식': return 'assets/image/한식.png';
@@ -73,7 +135,7 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
       case '일식': return 'assets/image/일식.png';
       case '양식': return 'assets/image/양식.png';
       case '기타': return 'assets/image/기타.png';
-      default: return 'assets/image/한식.png'; // 기본 이미지
+      default: return 'assets/image/한식.png';
     }
   }
 
@@ -82,7 +144,7 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
     return Scaffold(
       backgroundColor: AppColors.lightTeal,
       appBar: AppBar(
-        backgroundColor: Colors.transparent, // AppColors.transparent 대신 Colors.transparent 사용
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.black),
@@ -105,7 +167,6 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
     );
   }
 
-  // 위치 선택 UI
   Widget _buildLocationSelector() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -115,11 +176,11 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: ElevatedButton(
             onPressed: () {
-              if (!_isLoading) {
+              // 로딩 중 아닐 때만 위치 변경 가능
+              if (_state != RecommendState.loading) {
                 setState(() {
                   _selectedLocation = location;
-                  // 위치 변경 시, 추천 결과 초기화
-                  _recommendedStore = null;
+                  _state = RecommendState.initial;
                   _errorMessage = null;
                 });
               }
@@ -138,22 +199,62 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
     );
   }
 
-  // 로딩, 에러, 결과, 초기 상태에 따라 다른 위젯을 보여주는 부분
+  // ✨ 화면 전환 로직을 상태에 따라 단순하게 변경
   Widget _buildResultView() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.heartRed));
-    }
-    if (_errorMessage != null) {
-      return Text(_errorMessage!, textAlign: TextAlign.center, style: AppTextStyles.body16Regular.copyWith(color: AppColors.black));
-    }
-    if (_recommendedStore != null) {
-      return _buildResultCard(_recommendedStore!);
+    if (_state == RecommendState.initial) {
+      if (_errorMessage != null) {
+        return Text(_errorMessage!, textAlign: TextAlign.center, style: AppTextStyles.body16Regular.copyWith(color: AppColors.black));
+      }
+      return _buildInitialCard();
     } else {
-      return _buildInitialCard(); // 추천 전 초기 카드
+      // 로딩 중이거나 결과가 나왔을 때 항상 PageView를 보여줌
+      return _buildShufflingAnimation();
     }
   }
 
-  // 추천받기 전 보여줄 초기 카드 UI
+  Widget _buildPlaceholderCard(String category) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [ BoxShadow(color: AppColors.shadowBlack20, blurRadius: 15, offset: const Offset(0, 5)) ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(_getFoodCategoryImagePath(category), width: 180, height: 180),
+          const SizedBox(height: 20),
+          Text(category, style: AppTextStyles.title24Bold.copyWith(fontSize: 20)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShufflingAnimation() {
+    return SizedBox(
+      height: 390,
+      child: PageView.builder(
+        controller: _pageController,
+        // ✨ 결과가 나온 후에는 사용자가 직접 스크롤 가능하도록 변경
+        physics: _state == RecommendState.revealed
+            ? const BouncingScrollPhysics()
+            : const NeverScrollableScrollPhysics(),
+        itemCount: _pageCount,
+        itemBuilder: (context, index) {
+          // ✨ 현재 페이지와 추천된 가게 정보를 비교하여 어떤 카드를 보여줄지 결정
+          final currentPage = _pageController.page?.round() ?? 0;
+          if (_state == RecommendState.revealed && index == currentPage && _recommendedStore != null) {
+            return _buildResultCard(_recommendedStore!);
+          } else {
+            final category = _placeholderCategories[index % _placeholderCategories.length];
+            return _buildPlaceholderCard(category);
+          }
+        },
+      ),
+    );
+  }
+
   Widget _buildInitialCard() {
     return Stack(
       alignment: Alignment.center,
@@ -184,68 +285,55 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
     );
   }
 
-  // 추천 결과 카드 UI
   Widget _buildResultCard(Store store) {
-    // [수정] 메뉴 데이터가 ID 값이므로, "인기 대표 메뉴"와 같은 고정 텍스트로 대체
-    const String menuDisplayName = '인기 대표 메뉴';
     final String categoryImagePath = _getFoodCategoryImagePath(store.foodCategory);
 
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
+    final cardContent = Column(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        Transform.rotate(
-          angle: -0.08,
-          child: Container(width: 280, height: 380, decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), borderRadius: BorderRadius.circular(20))),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(100),
+          child: Image.asset(categoryImagePath, width: 150, height: 150, fit: BoxFit.cover),
         ),
-        Container(
-          width: 290,
-          height: 390,
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.shadowBlack20, blurRadius: 15, offset: const Offset(0, 5))]),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: Image.asset(categoryImagePath, width: 150, height: 150, fit: BoxFit.cover),
+        Column(
+          children: [
+            if (store.foodCategory.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(color: AppColors.black, borderRadius: BorderRadius.circular(12)),
+                  child: Text(store.foodCategory, style: const TextStyle(fontFamily: 'Pretendard', fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.white)),
+                ),
               ),
-              Column(
-                children: [
-                  // [수정] 카테고리 이름이 있을 때만 표시
-                  if (store.foodCategory.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(color: AppColors.black, borderRadius: BorderRadius.circular(12)),
-                        child: Text(store.foodCategory, style: const TextStyle(fontFamily: 'Pretendard', fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.white)),
-                      ),
-                    ),
-                  Text(store.name, style: AppTextStyles.title24Bold, textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.unclickGrey, width: 1)),
-                    child: Text(menuDisplayName, style: AppTextStyles.button14Bold.copyWith(color: AppColors.heartRed)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        )
+            Text(store.name, style: AppTextStyles.title24Bold, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.unclickGrey, width: 1)),
+              child: Text('인기 대표 메뉴', style: AppTextStyles.button14Bold.copyWith(color: AppColors.heartRed)),
+            ),
+          ],
+        ),
       ],
+    );
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.shadowBlack20, blurRadius: 15, offset: const Offset(0, 5))]),
+      child: cardContent,
     );
   }
 
-  // 상태에 따라 다른 버튼들을 보여주는 부분
+  // ✨ 버튼도 상태에 따라 다르게 보여줌
   Widget _buildActionButtons() {
-    if (_recommendedStore != null) {
+    if (_state == RecommendState.revealed) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           ElevatedButton(
-            onPressed: _isLoading ? null : _fetchRandomStore,
+            onPressed: () => _fetchRandomStore(),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.white,
               foregroundColor: AppColors.black,
@@ -270,7 +358,7 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
       );
     } else {
       return ElevatedButton(
-        onPressed: _isLoading ? null : _fetchRandomStore,
+        onPressed: _state == RecommendState.loading ? null : _fetchRandomStore,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryGreen,
           foregroundColor: AppColors.white,
