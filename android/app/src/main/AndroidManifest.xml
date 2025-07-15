@@ -11,6 +11,8 @@
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false">
 
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="${Maps_API_KEY}"/>
 
         <!-- ✅ Flutter 메인 액티비티 -->
 

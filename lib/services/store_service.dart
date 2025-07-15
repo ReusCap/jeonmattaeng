@@ -28,4 +28,13 @@ class StoreService {
       rethrow; // 에러를 다시 던져서 UI단에서 처리할 수 있도록 함
     }
   }
+  // ✅ 지도 전용 API를 호출할 새 함수를 추가합니다.
+  static Future<List<Store>> fetchMapStores() async {
+    // '/map/stores'는 예시이며, 실제 엔드포인트로 변경해야 합니다.
+    final response = await DioClient.dio.get('/map/stores');
+    // Store 모델은 lat, lng, name 등이 모두 포함되어 있으므로 재사용 가능합니다.
+    return (response.data as List)
+        .map((json) => Store.fromJson(json))
+        .toList();
+  }
 }
