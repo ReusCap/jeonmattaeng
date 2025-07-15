@@ -9,9 +9,9 @@ class Store {
   final int likeSum;
   final String locationCategory;
   final String foodCategory;
-  // ✅ 지도 표시에 필수적인 위도, 경도 필드 추가
   final double lat;
   final double lng;
+  final double? distance; // 서버에서 거리 계산 시 받는 필드 (nullable)
 
   Store({
     required this.id,
@@ -22,36 +22,68 @@ class Store {
     required this.likeSum,
     required this.locationCategory,
     required this.foodCategory,
-    // ✅ 생성자에 위도, 경도 추가
     required this.lat,
     required this.lng,
+    this.distance,
   });
 
-  // ✅ fromJson 팩토리 메서드 수정
+  /// [개선] JSON 데이터를 Store 객체로 변환하는 팩토리 메서드
+  /// - 내부 파싱 함수를 사용해 가독성과 안정성 향상
   factory Store.fromJson(Map<String, dynamic> json) {
-    try {
-      return Store(
-        id: json['_id'] ?? '',
-        name: json['name'] ?? '',
-        location: json['location'] ?? '',
-        menus: List<String>.from(json['menus'] ?? []),
-        // API 응답의 'image' 필드를 'displayedImg'에 매핑합니다.
-        displayedImg: json['image'] ?? '',
-        likeSum: json['likeSum'] ?? 0,
-        locationCategory: json['locationCategory'] ?? '',
-        foodCategory: json['foodCategory'] ?? '',
-        // ✅ API로부터 받은 위도, 경도 값을 double 타입으로 변환합니다.
-        // API 값이 문자열, 정수, 실수 등 어떤 타입으로 와도 안전하게 처리합니다.
-        lat: double.tryParse(json['lat']?.toString() ?? '0.0') ?? 0.0,
-        lng: double.tryParse(json['lng']?.toString() ?? '0.0') ?? 0.0,
-      );
-    } catch (e, stack) {
-      print('[ERROR] Store 파싱 오류: $e');
-      print('[STACK] $stack');
-      // 파싱에 실패하면 앱이 죽지 않도록 기본값을 가진 객체를 반환하거나,
-      // 혹은 에러를 다시 던져 상위에서 처리하게 할 수 있습니다.
-      // 여기서는 에러를 다시 던집니다.
-      rethrow;
+    // 다양한 타입의 값을 안전하게 double로 변환하는 내부 함수
+    double _parseCoordinate(dynamic value) {
+      if (value == null) return 0.0;
+      return double.tryParse(value.toString()) ?? 0.0;
     }
+
+    return Store(
+      id: json['_id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      location: json['location'] as String? ?? '',
+      menus: List<String>.from(json['menus'] ?? []),
+      displayedImg: json['image'] as String? ?? '', // API 필드명 'image'를 모델 필드 'displayedImg'에 매핑
+      likeSum: json['likeSum'] as int? ?? 0,
+      locationCategory: json['locationCategory'] as String? ?? '',
+      foodCategory: json['foodCategory'] as String? ?? '',
+      lat: _parseCoordinate(json['lat']),
+      lng: _parseCoordinate(json['lng']),
+      distance: (json['distance'] as num?)?.toDouble(),
+    );
+  }
+
+  /// [추가] 객체의 일부 필드만 변경하여 새로운 인스턴스를 생성하는 메서드
+  /// - 불변성을 유지하며 상태를 관리할 때 유용
+  Store copyWith({
+    String? id,
+    String? name,
+    String? location,
+    List<String>? menus,
+    String? displayedImg,
+    int? likeSum,
+    String? locationCategory,
+    String? foodCategory,
+    double? lat,
+    double? lng,
+    double? distance,
+  }) {
+    return Store(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      location: location ?? this.location,
+      menus: menus ?? this.menus,
+      displayedImg: displayedImg ?? this.displayedImg,
+      likeSum: likeSum ?? this.likeSum,
+      locationCategory: locationCategory ?? this.locationCategory,
+      foodCategory: foodCategory ?? this.foodCategory,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      distance: distance ?? this.distance,
+    );
+  }
+
+  /// [추가] 디버깅 시 객체의 주요 정보를 쉽게 확인하기 위한 toString 오버라이드
+  @override
+  String toString() {
+    return 'Store(id: $id, name: $name, lat: $lat, lng: $lng)';
   }
 }
