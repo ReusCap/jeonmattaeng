@@ -92,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                 duration: const Duration(milliseconds: 1000),
                 curve: Curves.easeIn,
                 child: SizedBox(
-                  width: screenWidth * 0.8, // 화면 너비에 비례하게 설정
+                  width: screenWidth * 0.7, // 화면 너비에 비례하게 설정
                   child: InkWell(
                     onTap: () async {
                       // 로그인 중에는 애니메이션이 다시 실행되지 않도록 함
