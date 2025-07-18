@@ -9,8 +9,8 @@ class DioClient {
   static final Dio _dio = Dio(
     BaseOptions(
       baseUrl: ApiConfig.baseUrl, // .env 등에서 불러온 기본 URL
-      connectTimeout: Duration(seconds: 5),
-      receiveTimeout: Duration(seconds: 5),
+      connectTimeout: Duration(seconds: 10),
+      receiveTimeout: Duration(seconds: 10),
     ),
   )..interceptors.add(
     InterceptorsWrapper(

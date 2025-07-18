@@ -33,6 +33,7 @@ class _StoreListPageView extends StatelessWidget {
   const _StoreListPageView();
 
   void _navigateToMenuPage(BuildContext context, Store store) async {
+    final provider = context.read<StoreProvider>();
     final bool? didLikeChange = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -49,7 +50,7 @@ class _StoreListPageView extends StatelessWidget {
     );
 
     if (didLikeChange == true && context.mounted) {
-      context.read<StoreProvider>().fetchStores();
+      provider.fetchStores();
     }
   }
 
@@ -58,7 +59,7 @@ class _StoreListPageView extends StatelessWidget {
     final provider = context.watch<StoreProvider>();
 
     return provider.isLoading
-        ? const Center(child: CircularProgressIndicator())
+        ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
         : Column(
       children: [
         _buildFoodCategoryFilters(context, provider),
@@ -66,44 +67,57 @@ class _StoreListPageView extends StatelessWidget {
         Expanded(
           child: provider.filteredStores.isEmpty
               ? const Center(child: Text('표시할 가게가 없습니다.'))
-              : (provider.isGridView
-              ? _buildStoreGridView(context, provider)
-              : _buildStoreListView(context, provider)),
+              : RefreshIndicator(
+            onRefresh: provider.fetchStores,
+            color: AppColors.primaryGreen,
+            child: provider.isGridView
+                ? _buildStoreGridView(context, provider)
+                : _buildStoreListView(context, provider),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildFoodCategoryFilters(
-      BuildContext context, StoreProvider provider) {
+  Widget _buildFoodCategoryFilters(BuildContext context, StoreProvider provider) {
     final categories = ['한식', '중식', '일식', '양식', '기타'];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: categories.map((category) {
-          final isSelected = provider.selectedFoodCategory == category;
-          return ChoiceChip(
-            label: Text(category),
-            selected: isSelected,
-            onSelected: (selected) => provider.selectFoodCategory(category),
-            selectedColor: AppColors.primaryGreen,
-            labelStyle:
-            TextStyle(color: isSelected ? Colors.white : Colors.black),
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.unclickGrey),
-            ),
-          );
-        }).toList(),
+      child: SizedBox(
+        height: 36,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: categories.map((category) {
+            final isSelected = provider.selectedFoodCategory == category;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: ChoiceChip(
+                label: Text(category),
+                selected: isSelected,
+                onSelected: (selected) => provider.selectFoodCategory(category),
+                selectedColor: AppColors.primaryGreen,
+                labelStyle: TextStyle(
+                    color: isSelected ? AppColors.white : AppColors.black,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+                backgroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: isSelected ? AppColors.primaryGreen : AppColors.unclickGrey),
+                ),
+                showCheckmark: false,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 
+  // [개선] 정렬 기능을 PopupMenuButton으로 구현
   Widget _buildListHeader(BuildContext context, StoreProvider provider) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -116,19 +130,35 @@ class _StoreListPageView extends StatelessWidget {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey),
-              borderRadius: BorderRadius.circular(8),
+          PopupMenuButton<SortOption>(
+            onSelected: (SortOption option) => provider.changeSortOption(option),
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOption>>[
+              const PopupMenuItem<SortOption>(
+                value: SortOption.distance,
+                child: Text('거리순'),
+              ),
+              const PopupMenuItem<SortOption>(
+                value: SortOption.likes,
+                child: Text('좋아요순'),
+              ),
+            ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.unclickGrey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    provider.sortOption == SortOption.distance ? '거리순' : '좋아요순',
+                    style: AppTextStyles.caption14Medium,
+                  ),
+                  const Icon(Icons.arrow_drop_down, color: AppColors.grey),
+                ],
+              ),
             ),
-            child: const Row(
-              children: [
-                Text('좋아요 많은 순'),
-                Icon(Icons.arrow_drop_down),
-              ],
-            ),
-          )
+          ),
         ],
       ),
     );
@@ -142,7 +172,7 @@ class _StoreListPageView extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.75, // 비율 조정
       ),
       itemCount: stores.length,
       itemBuilder: (context, index) {
@@ -164,6 +194,7 @@ class _StoreListPageView extends StatelessWidget {
     );
   }
 
+  // [개선] 카드에 거리 표시 추가
   Widget _buildStoreCard(BuildContext context, Store store) {
     return GestureDetector(
       onTap: () => _navigateToMenuPage(context, store),
@@ -188,22 +219,24 @@ class _StoreListPageView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(store.name,
-                      style: AppTextStyles.body16Bold,
-                      overflow: TextOverflow.ellipsis),
-                  Text(store.foodCategory,
-                      style: AppTextStyles.caption14Medium
-                          .copyWith(color: AppColors.grey)),
+                  Text(store.name, style: AppTextStyles.body16Bold, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 2),
+                  Text(store.foodCategory, style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.favorite,
-                          color: AppColors.heartRed, size: 14),
+                      const Icon(Icons.favorite, color: AppColors.heartRed, size: 14),
                       const SizedBox(width: 2),
                       Text(store.likeSum.toString()),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.comment, color: AppColors.grey, size: 14),
-                      const SizedBox(width: 2),
-                      const Text('0'),
+                      const Spacer(),
+                      // [추가] 거리가 있을 경우 표시
+                      if (store.distance != null)
+                        Text(
+                          store.distance! < 1000
+                              ? '${store.distance!.toStringAsFixed(0)}m'
+                              : '${(store.distance! / 1000).toStringAsFixed(1)}km',
+                          style: AppTextStyles.caption14Medium.copyWith(color: AppColors.primaryGreen),
+                        ),
                     ],
                   ),
                 ],
@@ -215,6 +248,7 @@ class _StoreListPageView extends StatelessWidget {
     );
   }
 
+  // [개선] 타일에 거리 표시 추가
   Widget _buildStoreTile(BuildContext context, Store store) {
     return GestureDetector(
       onTap: () => _navigateToMenuPage(context, store),
@@ -222,8 +256,9 @@ class _StoreListPageView extends StatelessWidget {
         color: AppColors.white,
         margin: const EdgeInsets.only(bottom: 12),
         elevation: 1.5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
               Expanded(
@@ -231,26 +266,30 @@ class _StoreListPageView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(store.name, style: AppTextStyles.title20SemiBold),
-                    Text(store.foodCategory,
-                        style: AppTextStyles.body16Regular
-                            .copyWith(color: AppColors.grey)),
+                    const SizedBox(height: 4),
+                    Text(store.foodCategory, style: AppTextStyles.body16Regular.copyWith(color: AppColors.grey)),
                     const SizedBox(height: 8),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Icon(Icons.favorite,
-                            color: AppColors.heartRed, size: 16),
+                        const Icon(Icons.favorite, color: AppColors.heartRed, size: 16),
                         const SizedBox(width: 4),
-                        Text(store.likeSum.toString()),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.comment,
-                            color: AppColors.grey, size: 16),
-                        const SizedBox(width: 4),
-                        const Text('0'),
+                        Text(store.likeSum.toString(), style: AppTextStyles.body16Regular),
+                        const Spacer(), // 남은 공간을 밀어냄
+                        // [추가] 거리가 있을 경우 표시
+                        if (store.distance != null)
+                          Text(
+                            store.distance! < 1000
+                                ? '${store.distance!.toStringAsFixed(0)}m'
+                                : '${(store.distance! / 1000).toStringAsFixed(1)}km',
+                            style: AppTextStyles.body16Bold.copyWith(color: AppColors.primaryGreen),
+                          ),
                       ],
                     )
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
@@ -258,6 +297,7 @@ class _StoreListPageView extends StatelessWidget {
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               )
             ],

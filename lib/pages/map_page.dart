@@ -11,7 +11,6 @@ import 'package:jeonmattaeng/models/store_model.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
 import 'package:geolocator/geolocator.dart';
-import 'dart:math';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,7 +22,6 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final Completer<GoogleMapController> _controller = Completer<GoogleMapController>();
 
-  // --- 상태 변수 ---
   bool _isLoading = true;
   List<Store> _allStores = [];
   Set<Marker> _markers = {};
@@ -33,36 +31,34 @@ class _MapPageState extends State<MapPage> {
   BitmapDescriptor _unselectedDotIcon = BitmapDescriptor.defaultMarker;
   BitmapDescriptor _selectedDotIcon = BitmapDescriptor.defaultMarker;
 
-
-  // --- 상수 ---
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(35.1398, 126.8521),
+    target: LatLng(35.1754, 126.9059), // 전남대학교 좌표로 수정
     zoom: 15.0,
   );
 
   @override
   void initState() {
     super.initState();
-    _loadMarkerIcons().then((_) {
-      _goToMyLocation();
-    });
+    _initializeMap();
   }
 
-  /// 커스텀 마커 아이콘 생성
+  Future<void> _initializeMap() async {
+    await _loadMarkerIcons();
+    await _goToMyLocation();
+  }
+
   Future<void> _loadMarkerIcons() async {
     final Uint8List unselectedBytes = await _createDotMarker(45, AppColors.primaryGreen);
     final Uint8List selectedBytes = await _createDotMarker(50, AppColors.heartRed);
 
     if (mounted) {
       setState(() {
-        // ✅ [수정] fromBytes에 size 파라미터 추가
-        _unselectedDotIcon = BitmapDescriptor.fromBytes(unselectedBytes, size: const Size.square(30));
-        _selectedDotIcon = BitmapDescriptor.fromBytes(selectedBytes, size: const Size.square(45));
+        _unselectedDotIcon = BitmapDescriptor.fromBytes(unselectedBytes);
+        _selectedDotIcon = BitmapDescriptor.fromBytes(selectedBytes);
       });
     }
   }
 
-  /// 테두리가 있는 원형 마커 아이콘을 그리는 함수
   Future<Uint8List> _createDotMarker(int size, Color color) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
@@ -79,8 +75,6 @@ class _MapPageState extends State<MapPage> {
     return data!.buffer.asUint8List();
   }
 
-
-  /// 위치 기반으로 서버로부터 가게 데이터를 가져오는 함수
   Future<void> _fetchStores({double? lat, double? lng}) async {
     if (mounted) setState(() => _isLoading = true);
 
@@ -90,11 +84,9 @@ class _MapPageState extends State<MapPage> {
 
       setState(() {
         _allStores = stores;
-
         if (_selectedStore != null) {
           _selectedStore = stores.firstWhereOrNull((s) => s.id == _selectedStore!.id);
         }
-
         _markers = _generateMarkers(stores, _selectedStore);
         _isLoading = false;
       });
@@ -102,29 +94,29 @@ class _MapPageState extends State<MapPage> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       debugPrint('❌ 지도 가게 목록 로딩 실패: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('주변 가게 목록을 불러오는 중 오류가 발생했습니다.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('주변 가게 목록을 불러오는 중 오류가 발생했습니다.')),
+        );
+      }
     }
   }
 
-  /// 현재 위치로 이동하고 주변 가게를 새로고침하는 함수
   Future<void> _goToMyLocation() async {
     try {
       if (mounted) setState(() => _isLoading = true);
-
       final position = await LocationService.getCurrentLocation();
-      setState(() {
-        _currentPosition = position;
-      });
+      if (!mounted) return;
+
+      setState(() => _currentPosition = position);
 
       _moveCameraTo(LatLng(position.latitude, position.longitude));
       await _fetchStores(lat: position.latitude, lng: position.longitude);
-
     } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      await _fetchStores(lat: _initialPosition.target.latitude, lng: _initialPosition.target.longitude);
       if (mounted) {
-        setState(() => _isLoading = false);
-        _fetchStores(lat: _initialPosition.target.latitude, lng: _initialPosition.target.longitude);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('현재 위치를 가져올 수 없습니다. 기본 위치로 검색합니다.')),
         );
@@ -132,7 +124,6 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  /// 가게 목록과 선택된 가게를 기반으로 마커 Set을 생성하는 함수
   Set<Marker> _generateMarkers(List<Store> stores, Store? selectedStore) {
     if (_unselectedDotIcon == BitmapDescriptor.defaultMarker) return {};
 
@@ -148,7 +139,6 @@ class _MapPageState extends State<MapPage> {
     }).toSet();
   }
 
-  /// 마커를 탭했을 때 호출되는 함수
   void _onMarkerTapped(Store store) {
     setState(() {
       _selectedStore = store;
@@ -157,46 +147,28 @@ class _MapPageState extends State<MapPage> {
     _moveCameraTo(LatLng(store.lat, store.lng));
   }
 
-  /// 지도의 빈 공간을 탭했을 때 호출되는 함수
   void _onMapTapped() {
-    setState(() {
-      _selectedStore = null;
-      _markers = _generateMarkers(_allStores, null);
-    });
+    if (_selectedStore != null) {
+      setState(() {
+        _selectedStore = null;
+        _markers = _generateMarkers(_allStores, null);
+      });
+    }
   }
 
-  /// 특정 좌표로 카메라를 부드럽게 이동시키는 함수
   Future<void> _moveCameraTo(LatLng target) async {
     final GoogleMapController controller = await _controller.future;
-
-    // 현재 지도의 줌 레벨을 가져옵니다.
     final double currentZoom = await controller.getZoomLevel();
-
-    // 새로운 줌 레벨을 담을 변수를 선언합니다.
-    double newZoom;
-
-    // --- 핵심 로직 ---
-    // 만약 현재 줌 레벨이 16보다 작다면 (지도가 멀리 있다면)
-    if (currentZoom < 16.2) {
-      // 목표 줌 레벨을 16으로 설정하여 '확대'합니다.
-      newZoom = 16.2;
-    } else {
-      // 그렇지 않다면 (이미 16보다 가깝게 확대되어 있다면)
-      // 현재 줌 레벨을 그대로 사용하여 '유지'합니다.
-      newZoom = currentZoom;
-    }
-
-    // 최종적으로 계산된 줌 레벨로 카메라를 이동시킵니다.
+    double newZoom = (currentZoom < 16.2) ? 16.2 : currentZoom;
     controller.animateCamera(CameraUpdate.newCameraPosition(
       CameraPosition(target: target, zoom: newZoom),
     ));
   }
 
-  /// 하단 정보 블록을 탭했을 때 메뉴 페이지로 이동하는 함수
   void _navigateToMenuPage(Store store) async {
-    await Navigator.push<bool>(
+    // [개선] MenuPage에서 bool? 값을 반환받아 데이터 변경 여부를 확인합니다.
+    final bool? didStateChange = await Navigator.push<bool>(
       context,
-      // ✅ [수정] MenuPage에 필수 파라미터 전달
       MaterialPageRoute(
         builder: (context) => MenuPage(
           storeId: store.id,
@@ -210,8 +182,9 @@ class _MapPageState extends State<MapPage> {
       ),
     );
 
-    if (_currentPosition != null && mounted) {
-      _fetchStores(lat: _currentPosition!.latitude, lng: _currentPosition!.longitude);
+    // [개선] 데이터가 변경되었을 경우(true)에만 목록을 새로고침합니다.
+    if (didStateChange == true && _currentPosition != null && mounted) {
+      await _fetchStores(lat: _currentPosition!.latitude, lng: _currentPosition!.longitude);
     }
   }
 
@@ -248,10 +221,10 @@ class _MapPageState extends State<MapPage> {
             myLocationEnabled: true,
             mapToolbarEnabled: false,
             onTap: (_) => _onMapTapped(),
+            padding: const EdgeInsets.only(bottom: 1), // 하단 Google 로고가 가려지지 않게 패딩 추가
           ),
           if (_isLoading)
             Container(
-              // ✅ [수정] withOpacity 대신 withAlpha 사용
               color: Colors.black.withAlpha(26),
               child: const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
             ),
@@ -268,7 +241,6 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  /// 하단 가게 정보 블록 UI 위젯
   Widget _buildStoreInfoBlock() {
     if (_selectedStore == null) return const SizedBox.shrink();
 
@@ -293,7 +265,7 @@ class _MapPageState extends State<MapPage> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(store.name, style: AppTextStyles.title20SemiBold),
+                      Flexible(child: Text(store.name, style: AppTextStyles.title20SemiBold, overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 8),
                       Text(store.foodCategory, style: AppTextStyles.body16Regular.copyWith(color: AppColors.categoryGrey)),
                     ],
@@ -304,11 +276,17 @@ class _MapPageState extends State<MapPage> {
                       const Icon(Icons.favorite, color: AppColors.heartRed, size: 20),
                       const SizedBox(width: 4),
                       Text('${store.likeSum}', style: AppTextStyles.body16Regular),
+                      const SizedBox(width: 12),
                       if (store.distance != null) ...[
-                        const SizedBox(width: 12),
                         const Icon(Icons.location_on, color: AppColors.categoryGrey, size: 20),
                         const SizedBox(width: 4),
-                        Text('${(store.distance! / 1000).toStringAsFixed(1)}km', style: AppTextStyles.body16Regular),
+                        // [개선] 1000m 미만은 m, 그 이상은 km 단위로 표시
+                        Text(
+                          store.distance! < 1000
+                              ? '${store.distance!.toStringAsFixed(0)}m'
+                              : '${(store.distance! / 1000).toStringAsFixed(1)}km',
+                          style: AppTextStyles.body16Regular,
+                        ),
                       ]
                     ],
                   ),

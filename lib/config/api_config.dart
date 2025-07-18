@@ -17,7 +17,9 @@ class ApiConfig {
   static String get deleteAccount => '$_base/user/me';          // 회원 탈퇴
 
   // --- Store ---
+  // [수정] 다시 단순한 문자열을 반환하는 getter로 변경합니다.
   static String get stores => '$_base/stores';
+
   static String menusByStore(String storeId) => '$_base/stores/$storeId/menus';
 
   // --- Menu ---
@@ -25,7 +27,7 @@ class ApiConfig {
   static String likeMenu(String menuId) => '$_base/menus/$menuId/like';
   static String unlikeMenu(String menuId) => '$_base/menus/$menuId/unlike';
   static String get weeklyTop3Menus => '$_base/menus/top3';
-  
+
   // --- Review ---
   static String reviewsByMenu(String menuId) => '$_base/menu/$menuId/reviews';
   static String deleteReview(String reviewId) => '$_base/menu/reviews/$reviewId';

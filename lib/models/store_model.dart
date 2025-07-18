@@ -1,5 +1,3 @@
-// lib/models/store_model.dart
-
 class Store {
   final String id;
   final String name;
@@ -11,7 +9,7 @@ class Store {
   final String foodCategory;
   final double lat;
   final double lng;
-  final double? distance; // 서버에서 거리 계산 시 받는 필드 (nullable)
+  final double? distance;
 
   Store({
     required this.id,
@@ -27,13 +25,23 @@ class Store {
     this.distance,
   });
 
-  /// [개선] JSON 데이터를 Store 객체로 변환하는 팩토리 메서드
-  /// - 내부 파싱 함수를 사용해 가독성과 안정성 향상
   factory Store.fromJson(Map<String, dynamic> json) {
-    // 다양한 타입의 값을 안전하게 double로 변환하는 내부 함수
     double _parseCoordinate(dynamic value) {
       if (value == null) return 0.0;
       return double.tryParse(value.toString()) ?? 0.0;
+    }
+
+    // [추가] "801m" 같은 문자열을 double로 변환하는 내부 함수
+    double? _parseDistance(dynamic value) {
+      if (value == null || value is! String || value.isEmpty) {
+        return null;
+      }
+      // 'm', 'km' 등 단위와 공백을 모두 제거하고 숫자 부분만 추출
+      final numericString = value.replaceAll(RegExp(r'[^0-9.]'), '');
+      if (numericString.isEmpty) {
+        return null;
+      }
+      return double.tryParse(numericString);
     }
 
     return Store(
@@ -41,18 +49,17 @@ class Store {
       name: json['name'] as String? ?? '',
       location: json['location'] as String? ?? '',
       menus: List<String>.from(json['menus'] ?? []),
-      displayedImg: json['image'] as String? ?? '', // API 필드명 'image'를 모델 필드 'displayedImg'에 매핑
+      displayedImg: json['image'] as String? ?? '',
       likeSum: json['likeSum'] as int? ?? 0,
       locationCategory: json['locationCategory'] as String? ?? '',
       foodCategory: json['foodCategory'] as String? ?? '',
       lat: _parseCoordinate(json['lat']),
       lng: _parseCoordinate(json['lng']),
-      distance: (json['distance'] as num?)?.toDouble(),
+      // [수정] 위에서 만든 _parseDistance 함수를 사용하여 거리 값을 파싱합니다.
+      distance: _parseDistance(json['distance']),
     );
   }
 
-  /// [추가] 객체의 일부 필드만 변경하여 새로운 인스턴스를 생성하는 메서드
-  /// - 불변성을 유지하며 상태를 관리할 때 유용
   Store copyWith({
     String? id,
     String? name,
@@ -81,7 +88,6 @@ class Store {
     );
   }
 
-  /// [추가] 디버깅 시 객체의 주요 정보를 쉽게 확인하기 위한 toString 오버라이드
   @override
   String toString() {
     return 'Store(id: $id, name: $name, lat: $lat, lng: $lng)';
