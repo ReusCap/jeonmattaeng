@@ -114,7 +114,6 @@ class _StoreListPageView extends StatelessWidget {
     );
   }
 
-  // [개선] 정렬 기능을 PopupMenuButton으로 구현
   Widget _buildListHeader(BuildContext context, StoreProvider provider) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
@@ -172,7 +171,7 @@ class _StoreListPageView extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.75, // 비율 조정
+        childAspectRatio: 0.85,
       ),
       itemCount: stores.length,
       itemBuilder: (context, index) {
@@ -194,7 +193,7 @@ class _StoreListPageView extends StatelessWidget {
     );
   }
 
-  // [개선] 카드에 거리 표시 추가
+  // [수정] 그리드 뷰 카드 UI
   Widget _buildStoreCard(BuildContext context, Store store) {
     return GestureDetector(
       onTap: () => _navigateToMenuPage(context, store),
@@ -219,17 +218,25 @@ class _StoreListPageView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(store.name, style: AppTextStyles.body16Bold, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Text(store.foodCategory, style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)),
-                  const SizedBox(height: 4),
+                  // [수정] 가게 이름과 카테고리를 Row로 묶어 가로 배치
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Flexible( // 이름이 길 경우 줄바꿈
+                          child: Text(store.name, style: AppTextStyles.body16Bold, overflow: TextOverflow.ellipsis)
+                      ),
+                      const SizedBox(width: 6),
+                      Text(store.foodCategory, style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)),
+                    ],
+                  ),
+                  const SizedBox(height: 6), // 간격 조정
                   Row(
                     children: [
                       const Icon(Icons.favorite, color: AppColors.heartRed, size: 14),
                       const SizedBox(width: 2),
                       Text(store.likeSum.toString()),
                       const Spacer(),
-                      // [추가] 거리가 있을 경우 표시
                       if (store.distance != null)
                         Text(
                           store.distance! < 1000
@@ -248,7 +255,7 @@ class _StoreListPageView extends StatelessWidget {
     );
   }
 
-  // [개선] 타일에 거리 표시 추가
+  // [수정] 리스트 뷰 타일 UI
   Widget _buildStoreTile(BuildContext context, Store store) {
     return GestureDetector(
       onTap: () => _navigateToMenuPage(context, store),
@@ -265,18 +272,26 @@ class _StoreListPageView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(store.name, style: AppTextStyles.title20SemiBold),
-                    const SizedBox(height: 4),
-                    Text(store.foodCategory, style: AppTextStyles.body16Regular.copyWith(color: AppColors.grey)),
-                    const SizedBox(height: 8),
+                    // [수정] 가게 이름과 카테고리를 Row로 묶어 가로 배치
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic, // 텍스트 높이 정렬
+                      children: [
+                        Flexible( // 이름이 길 경우 UI 깨짐 방지
+                            child: Text(store.name, style: AppTextStyles.title20SemiBold)
+                        ),
+                        const SizedBox(width: 8),
+                        Text(store.foodCategory, style: AppTextStyles.body16Regular.copyWith(color: AppColors.grey)),
+                      ],
+                    ),
+                    const SizedBox(height: 12), // 간격 조정
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Icon(Icons.favorite, color: AppColors.heartRed, size: 16),
                         const SizedBox(width: 4),
                         Text(store.likeSum.toString(), style: AppTextStyles.body16Regular),
-                        const Spacer(), // 남은 공간을 밀어냄
-                        // [추가] 거리가 있을 경우 표시
+                        const Spacer(),
                         if (store.distance != null)
                           Text(
                             store.distance! < 1000
