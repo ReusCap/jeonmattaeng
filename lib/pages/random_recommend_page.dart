@@ -266,15 +266,15 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
         Container(
           width: 290,
           height: 390,
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.shadowBlack20, blurRadius: 15, offset: const Offset(0, 5))]),
+          decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.shadowBlack20, blurRadius: 15, offset: const Offset(0, 5))]),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 150,
                 height: 150,
-                decoration: BoxDecoration(color: AppColors.lightTeal, borderRadius: BorderRadius.circular(100)),
-                child: const Icon(Icons.question_mark, size: 80, color: AppColors.primaryGreen),
+                decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(100)),
+                child: const Icon(Icons.question_mark, size: 100, color: AppColors.primaryGreen),
               ),
               const SizedBox(height: 24),
               const Text('랜덤 메뉴 추천', style: AppTextStyles.title24Bold)

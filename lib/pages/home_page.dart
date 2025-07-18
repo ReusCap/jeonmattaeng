@@ -1,23 +1,33 @@
+// lib/pages/home_page.dart (최종 수정본)
+
 import 'package:flutter/material.dart';
+import 'package:jeonmattaeng/models/popular_menu_model.dart';
 import 'package:jeonmattaeng/pages/random_recommend_page.dart';
 import 'package:jeonmattaeng/pages/store_list_page.dart';
+import 'package:jeonmattaeng/services/menu_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
 
 class HomePage extends StatefulWidget {
-  // 부모로부터 Key를 받기 위해 생성자 수정
   const HomePage({super.key});
 
   @override
   State<HomePage> createState() => HomePageState();
 }
 
-// 클래스 이름 앞에 _(언더스코어)를 붙여 private으로 만듦
 class HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
 
   String? _selectedLocation;
   String? _initialSearchQuery;
+
+  late Future<List<PopularMenu>> _topMenusFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _topMenusFuture = MenuService.getWeeklyTop3Menus();
+  }
 
   @override
   void dispose() {
@@ -25,12 +35,8 @@ class HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  // 1. MainTabPage에서 호출할 수 있는 공용(public) 초기화 함수
-  void reset() {
-    _goBackToHome();
-  }
+  void reset() => _goBackToHome();
 
-  // 내부적으로 사용하는 비공개(private) 초기화 함수
   void _goBackToHome() {
     setState(() {
       _selectedLocation = null;
@@ -42,7 +48,7 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white, // [수정] AppColors 적용
       appBar: _selectedLocation == null
           ? null
           : AppBar(
@@ -53,8 +59,7 @@ class HomePageState extends State<HomePage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: _goBackToHome,
         ),
-        title:
-        Text(_selectedLocation!, style: AppTextStyles.title20SemiBold),
+        title: Text(_selectedLocation!, style: AppTextStyles.title20SemiBold),
         centerTitle: true,
       ),
       body: _selectedLocation == null
@@ -75,7 +80,121 @@ class HomePageState extends State<HomePage> {
           const SizedBox(height: 16),
           _buildRecommendCard(context),
           const SizedBox(height: 24),
+          _buildPopularMenusSection(),
+          const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPopularMenusSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              Text('이번주 인기 메뉴! ', style: AppTextStyles.title20SemiBold),
+              Text('🍴', style: TextStyle(fontSize: 20)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 220,
+          child: FutureBuilder<List<PopularMenu>>(
+            future: _topMenusFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primaryGreen)); // [수정] AppColors 적용
+              }
+              if (snapshot.hasError) {
+                return const Center(
+                    child: Text('메뉴를 불러올 수 없어요 😢', style: AppTextStyles.body16Regular));
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('인기 메뉴가 아직 없어요.', style: AppTextStyles.body16Regular));
+              }
+
+              final menus = snapshot.data!;
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: menus.length,
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                itemBuilder: (context, index) {
+                  return _buildMenuItemCard(menus[index], index + 1);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuItemCard(PopularMenu menu, int rank) {
+    return Container(
+      width: 160,
+      margin: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: Card(
+        elevation: 2,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Image.network(
+                  menu.displayedImg,
+                  height: 120,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.restaurant_menu, size: 60, color: AppColors.grey)),
+                  loadingBuilder: (context, child, progress) => progress == null
+                      ? child
+                      : const SizedBox(
+                      height: 120, child: Center(child: CircularProgressIndicator())),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.primaryGreen, // [수정] AppColors 적용
+                    child: Text('$rank',
+                        style: AppTextStyles.button14Bold.copyWith(color: AppColors.white)), // [수정] AppTextStyles 적용
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    menu.name,
+                    style: AppTextStyles.button14Bold, // [수정] AppTextStyles 적용 (body14Bold 대안)
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${menu.locationCategory} | ${menu.storeName}',
+                    style: AppTextStyles.caption14Medium
+                        .copyWith(fontSize: 12, color: AppColors.grey), // [수정] AppTextStyles 적용 (caption12 대안)
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -83,15 +202,13 @@ class HomePageState extends State<HomePage> {
   Widget _buildTopHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-          16, MediaQuery.of(context).padding.top + 16, 16, 30),
+      padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 30),
       decoration: const BoxDecoration(
-        color: Color(0xFFA0CD9A),
+        color: AppColors.splashGreen, // [수정] AppColors 적용
       ),
       child: Column(
         children: [
-          Text('전맛탱',
-              style: AppTextStyles.title24Bold.copyWith(color: AppColors.white)),
+          Text('전맛탱', style: AppTextStyles.title24Bold.copyWith(color: AppColors.white)),
           const SizedBox(height: 16),
           TextField(
             controller: _searchController,
@@ -99,7 +216,7 @@ class HomePageState extends State<HomePage> {
               hintText: '여기서 가게를 검색하세요!',
               prefixIcon: const Icon(Icons.search, color: AppColors.grey),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppColors.white, // [수정] AppColors 적용
               contentPadding: EdgeInsets.zero,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -126,11 +243,11 @@ class HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.white, // [수정] AppColors 적용
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: AppColors.shadowBlack20, // [수정] AppColors 적용
               spreadRadius: 2,
               blurRadius: 10,
             )
@@ -143,13 +260,9 @@ class HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                    child:
-                    _locationButton(context, '후문', 'assets/icons/후문.png')),
-                Expanded(
-                    child: _locationButton(context, '상대', 'assets/icons/상대.png')),
-                Expanded(
-                    child: _locationButton(context, '정문', 'assets/icons/정문.png')),
+                Expanded(child: _locationButton(context, '후문', 'assets/icons/후문.png')),
+                Expanded(child: _locationButton(context, '상대', 'assets/icons/상대.png')),
+                Expanded(child: _locationButton(context, '정문', 'assets/icons/정문.png')),
               ],
             ),
           ],
@@ -158,8 +271,7 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _locationButton(
-      BuildContext context, String locationName, String iconPath) {
+  Widget _locationButton(BuildContext context, String locationName, String iconPath) {
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -188,9 +300,9 @@ class HomePageState extends State<HomePage> {
         margin: const EdgeInsets.symmetric(horizontal: 16.0),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9EF),
+          color: AppColors.lightTeal, // [수정] AppColors 적용 (유사 색상)
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF81C784), width: 1.5),
+          border: Border.all(color: AppColors.accentTeal, width: 1.5), // [수정] AppColors 적용 (유사 색상)
         ),
         child: Row(
           children: [
@@ -203,27 +315,22 @@ class HomePageState extends State<HomePage> {
                   const Text('오늘 뭐 먹지?', style: AppTextStyles.subtitle18SemiBold),
                   const SizedBox(height: 4),
                   Text('고민된다면 메뉴를 추천받아 보세요!',
-                      style: AppTextStyles.caption14Medium
-                          .copyWith(color: AppColors.grey)),
+                      style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey)),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF96A81),
+                      color: AppColors.heartRed, // [수정] AppColors 적용 (유사 색상)
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('빠르게 메뉴 추천 받아보기!',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12)),
-                        SizedBox(width: 6),
-                        Icon(Icons.arrow_forward_ios,
-                            color: Colors.white, size: 12),
+                            style: AppTextStyles.button14Bold // [수정] AppTextStyles 적용
+                                .copyWith(color: AppColors.white, fontSize: 12)),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_forward_ios, color: AppColors.white, size: 12),
                       ],
                     ),
                   )
