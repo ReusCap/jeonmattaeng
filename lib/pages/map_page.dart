@@ -22,17 +22,21 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final Completer<GoogleMapController> _controller = Completer<GoogleMapController>();
 
+  // --- 상태 변수 ---
   bool _isLoading = true;
   List<Store> _allStores = [];
   Set<Marker> _markers = {};
   Store? _selectedStore;
   Position? _currentPosition;
 
+  // --- 아이콘 및 스트림 변수 ---
   BitmapDescriptor _unselectedDotIcon = BitmapDescriptor.defaultMarker;
   BitmapDescriptor _selectedDotIcon = BitmapDescriptor.defaultMarker;
+  StreamSubscription<Position>? _positionStreamSubscription; // [추가] 위치 스트림 구독을 관리할 변수
 
+  // --- 상수 ---
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(35.1754, 126.9059), // 전남대학교 좌표로 수정
+    target: LatLng(35.1754, 126.9059), // 전남대학교 좌표
     zoom: 15.0,
   );
 
@@ -42,10 +46,65 @@ class _MapPageState extends State<MapPage> {
     _initializeMap();
   }
 
+  // [개선] 페이지가 사라질 때 위치 스트림 구독을 반드시 취소하여 메모리 누수를 방지합니다.
+  @override
+  void dispose() {
+    _positionStreamSubscription?.cancel();
+    super.dispose();
+  }
+
+  // [수정] 초기화 시 첫 위치를 가져온 후, 실시간 위치 감지를 시작합니다.
   Future<void> _initializeMap() async {
     await _loadMarkerIcons();
-    await _goToMyLocation();
+    await _startListeningLocation();
   }
+
+  // [추가] 실시간 위치 감지를 시작하는 함수
+  Future<void> _startListeningLocation() async {
+    // 1. 먼저 현재 위치를 한 번 가져와서 지도에 표시합니다. (로딩 인디케이터 표시)
+    await _goToMyLocation();
+
+    // 2. 위치 변경 감지를 시작합니다.
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 50, // [핵심] 50미터 이상 움직일 때만 이벤트를 발생시켜 효율을 높입니다.
+    );
+
+    // 3. 위치 스트림을 구독합니다.
+    _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) {
+      debugPrint('위치 변경 감지: ${position.latitude}, ${position.longitude}');
+      // [핵심] 위치가 변경될 때마다 '조용한' 업데이트 함수를 호출합니다.
+      _updateDistancesSilently(position);
+    });
+  }
+
+  // [추가] 로딩 인디케이터 없이 데이터를 '조용히' 갱신하는 함수
+  Future<void> _updateDistancesSilently(Position newPosition) async {
+    try {
+      // 새 위치를 기준으로 가게 목록과 거리를 다시 가져옵니다.
+      final stores = await StoreService.fetchStores(lat: newPosition.latitude, lng: newPosition.longitude);
+      if (!mounted) return;
+
+      setState(() {
+        // isLoading 상태를 변경하지 않아 화면 깜빡임이 없습니다.
+        _allStores = stores;
+        _currentPosition = newPosition; // 현재 위치 정보도 갱신
+
+        // 현재 선택된 가게가 있다면, 새 정보(거리 등)로 업데이트합니다.
+        if (_selectedStore != null) {
+          _selectedStore = stores.firstWhereOrNull((s) => s.id == _selectedStore!.id);
+        }
+        // 마커를 새로 생성하여 UI를 업데이트합니다.
+        _markers = _generateMarkers(stores, _selectedStore);
+      });
+    } catch (e) {
+      // 조용한 업데이트이므로, 실패 시 사용자에게 알리지 않고 로그만 남길 수 있습니다.
+      debugPrint('❌ 조용한 가게 목록 업데이트 실패: $e');
+    }
+  }
+
+  // --- 이하 기존 코드 (큰 변경 없음) ---
 
   Future<void> _loadMarkerIcons() async {
     final Uint8List unselectedBytes = await _createDotMarker(45, AppColors.primaryGreen);
@@ -75,6 +134,7 @@ class _MapPageState extends State<MapPage> {
     return data!.buffer.asUint8List();
   }
 
+  // 이 함수는 이제 '내 위치' 버튼을 누르거나, 초기 로딩 시에만 사용됩니다.
   Future<void> _fetchStores({double? lat, double? lng}) async {
     if (mounted) setState(() => _isLoading = true);
 
@@ -88,17 +148,16 @@ class _MapPageState extends State<MapPage> {
           _selectedStore = stores.firstWhereOrNull((s) => s.id == _selectedStore!.id);
         }
         _markers = _generateMarkers(stores, _selectedStore);
-        _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
       debugPrint('❌ 지도 가게 목록 로딩 실패: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('주변 가게 목록을 불러오는 중 오류가 발생했습니다.')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -113,8 +172,7 @@ class _MapPageState extends State<MapPage> {
       _moveCameraTo(LatLng(position.latitude, position.longitude));
       await _fetchStores(lat: position.latitude, lng: position.longitude);
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       await _fetchStores(lat: _initialPosition.target.latitude, lng: _initialPosition.target.longitude);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -166,7 +224,6 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _navigateToMenuPage(Store store) async {
-    // [개선] MenuPage에서 bool? 값을 반환받아 데이터 변경 여부를 확인합니다.
     final bool? didStateChange = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -182,7 +239,6 @@ class _MapPageState extends State<MapPage> {
       ),
     );
 
-    // [개선] 데이터가 변경되었을 경우(true)에만 목록을 새로고침합니다.
     if (didStateChange == true && _currentPosition != null && mounted) {
       await _fetchStores(lat: _currentPosition!.latitude, lng: _currentPosition!.longitude);
     }
@@ -221,7 +277,7 @@ class _MapPageState extends State<MapPage> {
             myLocationEnabled: true,
             mapToolbarEnabled: false,
             onTap: (_) => _onMapTapped(),
-            padding: const EdgeInsets.only(bottom: 1), // 하단 Google 로고가 가려지지 않게 패딩 추가
+            padding: const EdgeInsets.only(bottom: 1),
           ),
           if (_isLoading)
             Container(
@@ -280,7 +336,6 @@ class _MapPageState extends State<MapPage> {
                       if (store.distance != null) ...[
                         const Icon(Icons.location_on, color: AppColors.categoryGrey, size: 20),
                         const SizedBox(width: 4),
-                        // [개선] 1000m 미만은 m, 그 이상은 km 단위로 표시
                         Text(
                           store.distance! < 1000
                               ? '${store.distance!.toStringAsFixed(0)}m'
