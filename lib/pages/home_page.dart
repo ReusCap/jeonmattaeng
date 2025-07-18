@@ -1,5 +1,3 @@
-// lib/pages/home_page.dart (최종 수정본)
-
 import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/models/popular_menu_model.dart';
 import 'package:jeonmattaeng/pages/random_recommend_page.dart';
@@ -48,7 +46,7 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white, // [수정] AppColors 적용
+      backgroundColor: AppColors.white,
       appBar: _selectedLocation == null
           ? null
           : AppBar(
@@ -101,14 +99,15 @@ class HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(height: 16),
+        // [수정] 카드 높이에 맞춰 전체 리스트의 높이를 줄입니다.
         SizedBox(
-          height: 220,
+          height: 120,
           child: FutureBuilder<List<PopularMenu>>(
             future: _topMenusFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                    child: CircularProgressIndicator(color: AppColors.primaryGreen)); // [수정] AppColors 적용
+                    child: CircularProgressIndicator(color: AppColors.primaryGreen));
               }
               if (snapshot.hasError) {
                 return const Center(
@@ -134,77 +133,101 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+  // --- [수정] 공간 낭비를 줄이고, 이미지를 둥근 사각형으로 변경 ---
   Widget _buildMenuItemCard(PopularMenu menu, int rank) {
     return Container(
-      width: 160,
+      width: 260, // 카드 너비 조정
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       child: Card(
-        elevation: 2,
+        elevation: 2.5,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Image.network(
-                  menu.displayedImg,
-                  height: 120,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                  const Center(child: Icon(Icons.restaurant_menu, size: 60, color: AppColors.grey)),
-                  loadingBuilder: (context, child, progress) => progress == null
-                      ? child
-                      : const SizedBox(
-                      height: 120, child: Center(child: CircularProgressIndicator())),
-                ),
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.primaryGreen, // [수정] AppColors 적용
-                    child: Text('$rank',
-                        style: AppTextStyles.button14Bold.copyWith(color: AppColors.white)), // [수정] AppTextStyles 적용
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              // 1. 왼쪽: 모서리가 둥근 사각 이미지와 랭킹 뱃지
+              Stack(
                 children: [
-                  Text(
-                    menu.name,
-                    style: AppTextStyles.button14Bold, // [수정] AppTextStyles 적용 (body14Bold 대안)
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  // [수정] ClipOval -> ClipRRect로 변경하여 둥근 사각형으로 만듭니다.
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Image.network(
+                      menu.displayedImg,
+                      width: 88,
+                      height: double.infinity, // Row의 높이에 꽉 차게
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(
+                            width: 88,
+                            color: AppColors.unclickGrey,
+                            child: const Icon(Icons.restaurant_menu, size: 40, color: AppColors.grey),
+                          ),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${menu.locationCategory} | ${menu.storeName}',
-                    style: AppTextStyles.caption14Medium
-                        .copyWith(fontSize: 12, color: AppColors.grey), // [수정] AppTextStyles 적용 (caption12 대안)
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: const Color(0xffE4BE25), // 골드 색상
+                      child: Text('$rank',
+                          style: AppTextStyles.button14Bold.copyWith(fontSize: 12, color: AppColors.white)),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(width: 16),
+              // 2. 오른쪽: 메뉴 정보 (이름, 가게 정보, 하트)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  // [수정] Spacer 대신 MainAxisAlignment로 간격을 균등하게 배분하여 공간 낭비를 줄입니다.
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    // 메뉴 이름
+                    Text(
+                      menu.name,
+                      style: AppTextStyles.subtitle18SemiBold.copyWith(color: AppColors.primaryGreen),
+                      maxLines: 2, // 이름이 길 경우 두 줄까지 표시
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // 가게 위치 | 가게 이름
+                    Text(
+                      '${menu.locationCategory} | ${menu.storeName}',
+                      style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // 누적 하트
+                    Row(
+                      children: [
+                        const Icon(Icons.favorite, color: AppColors.heartRed, size: 20),
+                        const SizedBox(width: 5),
+                        Text(
+                          menu.likeCount.toString(),
+                          style: AppTextStyles.body16Regular,
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+  // --- UI 수정 끝 ---
 
   Widget _buildTopHeader(BuildContext context) {
+    // ... 이하 코드는 모두 동일합니다 ...
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 30),
       decoration: const BoxDecoration(
-        color: AppColors.splashGreen, // [수정] AppColors 적용
+        color: AppColors.splashGreen,
       ),
       child: Column(
         children: [
@@ -216,7 +239,7 @@ class HomePageState extends State<HomePage> {
               hintText: '여기서 가게를 검색하세요!',
               prefixIcon: const Icon(Icons.search, color: AppColors.grey),
               filled: true,
-              fillColor: AppColors.white, // [수정] AppColors 적용
+              fillColor: AppColors.white,
               contentPadding: EdgeInsets.zero,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -243,11 +266,11 @@ class HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
-          color: AppColors.white, // [수정] AppColors 적용
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
             BoxShadow(
-              color: AppColors.shadowBlack20, // [수정] AppColors 적용
+              color: AppColors.shadowBlack20,
               spreadRadius: 2,
               blurRadius: 10,
             )
@@ -300,9 +323,9 @@ class HomePageState extends State<HomePage> {
         margin: const EdgeInsets.symmetric(horizontal: 16.0),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.lightTeal, // [수정] AppColors 적용 (유사 색상)
+          color: AppColors.lightTeal,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.accentTeal, width: 1.5), // [수정] AppColors 적용 (유사 색상)
+          border: Border.all(color: AppColors.accentTeal, width: 1.5),
         ),
         child: Row(
           children: [
@@ -320,14 +343,14 @@ class HomePageState extends State<HomePage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.heartRed, // [수정] AppColors 적용 (유사 색상)
+                      color: AppColors.heartRed,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('빠르게 메뉴 추천 받아보기!',
-                            style: AppTextStyles.button14Bold // [수정] AppTextStyles 적용
+                            style: AppTextStyles.button14Bold
                                 .copyWith(color: AppColors.white, fontSize: 12)),
                         const SizedBox(width: 6),
                         const Icon(Icons.arrow_forward_ios, color: AppColors.white, size: 12),
