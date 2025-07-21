@@ -144,6 +144,7 @@ class HomePageState extends State<HomePage> {
             children: [
               // [수정] 요청하신 제목으로 텍스트 변경
               Text('나와 비슷한 사용자가 좋아하는 메뉴!', style: AppTextStyles.title20SemiBold),
+              Text('🍴', style: TextStyle(fontSize: 20)),
             ],
           ),
         ),
