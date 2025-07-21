@@ -50,13 +50,14 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
   }
 
   Future<void> _fetchRandomStore() async {
+    // 1단계: 상태를 로딩 중으로 변경하고 애니메이션 시작
     setState(() {
       _state = RecommendState.loading;
       _errorMessage = null;
       _recommendedStore = null;
     });
 
-    // 1단계: 고속 셔플 애니메이션
+    // 고속 셔플 애니메이션 시작
     _animationTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!_pageController.hasClients) return;
       final randomPage = Random().nextInt(_pageCount);
@@ -68,13 +69,15 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
     });
 
     try {
+      // API로부터 추천 가게 정보 요청
       final store = await StoreService.getRecommendedStore(_selectedLocation);
       if (store == null) {
         throw Exception('해당 위치에 추천할 가게를 찾지 못했습니다.');
       }
 
+      // 셔플 애니메이션이 지속되는 총 시간
       await Future.delayed(const Duration(milliseconds: 1500));
-      _animationTimer?.cancel();
+      _animationTimer?.cancel(); // 고속 셔플 타이머 중지
 
       // 2단계: 결과 카테고리에 맞춰 중앙으로 감속하며 멈추기
       final resultCategory = store.foodCategory;
@@ -86,6 +89,7 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
         targetPage += 5;
       }
 
+      // 최종 결과 카드로 부드럽게 이동
       if (_pageController.hasClients) {
         await _pageController.animateToPage(
           targetPage,
@@ -94,7 +98,15 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
         );
       }
 
+      // 결과 공개 전 잠시 멈춤
       await Future.delayed(const Duration(milliseconds: 600));
+
+      // 📸 결과를 보여주기 전에 이미지를 미리 불러옵니다.
+      const String defaultImgUrl = "https://jmt-bucket-01.s3.ap-northeast-2.amazonaws.com/%EA%B0%80%EA%B2%8C%EA%B8%B0%EB%B3%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA+2025-07-04+%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE+9.55.05.png";
+      // [수정] 고유 이미지를 가졌을 경우에만 미리 불러오기 실행
+      if (store.displayedImg.isNotEmpty && store.displayedImg != defaultImgUrl && mounted) {
+        await precacheImage(NetworkImage(store.displayedImg), context);
+      }
 
       // 3단계: 결과 공개! (UI가 바뀌고 버튼이 나타남)
       setState(() {
@@ -103,9 +115,9 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
       });
 
     } catch (e) {
-      _animationTimer?.cancel();
+      _animationTimer?.cancel(); // 에러 발생 시 타이머 중지
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = '오류가 발생했어요.\n네트워크 상태를 확인 후 다시 시도해 주세요.';
         _state = RecommendState.initial; // 에러 시 초기 상태로
       });
     }
@@ -286,6 +298,8 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
   }
 
   Widget _buildResultCard(Store store) {
+    // 기본 이미지 URL 정의
+    const String defaultImgUrl = "https://jmt-bucket-01.s3.ap-northeast-2.amazonaws.com/%EA%B0%80%EA%B2%8C%EA%B8%B0%EB%B3%B8%EC%9D%B4%EB%AF%B8%EC%A7%80/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA+2025-07-04+%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE+9.55.05.png";
     final String categoryImagePath = _getFoodCategoryImagePath(store.foodCategory);
 
     final cardContent = Column(
@@ -293,7 +307,22 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(100),
-          child: Image.asset(categoryImagePath, width: 150, height: 150, fit: BoxFit.cover),
+          // [수정] 기본 이미지인지 아닌지에 따라 다른 위젯을 보여줌
+          child: store.displayedImg == defaultImgUrl
+          // 1. 기본 이미지일 경우: 카테고리 아이콘 표시
+              ? Image.asset(categoryImagePath, width: 150, height: 150, fit: BoxFit.cover)
+          // 2. 고유 이미지일 경우: 기존처럼 네트워크 이미지 표시
+              : Image.network(store.displayedImg, width: 150, height: 150, fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              // 로딩 중에는 카테고리 아이콘을 보여줘서 깜빡임 최소화
+              return Image.asset(categoryImagePath, width: 150, height: 150, fit: BoxFit.cover);
+            },
+            errorBuilder: (context, error, stackTrace) {
+              // 에러 발생 시에도 카테고리 아이콘 표시
+              return Image.asset(categoryImagePath, width: 150, height: 150, fit: BoxFit.cover);
+            },
+          ),
         ),
         Column(
           children: [
@@ -308,11 +337,41 @@ class _RandomRecommendPageState extends State<RandomRecommendPage> {
               ),
             Text(store.name, style: AppTextStyles.title24Bold, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.unclickGrey, width: 1)),
-              child: Text('인기 대표 메뉴', style: AppTextStyles.button14Bold.copyWith(color: AppColors.heartRed)),
-            ),
+            if (store.popularMenu != null && store.popularMenu!.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: const Color(0xFFE8E8E8), width: 1.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2F1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '인기 1위',
+                        style: AppTextStyles.button14Bold.copyWith(color: AppColors.primaryGreen, fontSize: 13),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        store.popularMenu!,
+                        style: AppTextStyles.body16Bold,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              )
           ],
         ),
       ],

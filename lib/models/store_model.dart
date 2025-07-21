@@ -1,3 +1,5 @@
+// models/store_model.dart
+
 class Store {
   final String id;
   final String name;
@@ -10,6 +12,7 @@ class Store {
   final double lat;
   final double lng;
   final double? distance;
+  final String? popularMenu; // [추가] 인기 메뉴 속성 추가
 
   Store({
     required this.id,
@@ -23,6 +26,7 @@ class Store {
     required this.lat,
     required this.lng,
     this.distance,
+    this.popularMenu, // [추가] 생성자에 추가
   });
 
   factory Store.fromJson(Map<String, dynamic> json) {
@@ -31,12 +35,10 @@ class Store {
       return double.tryParse(value.toString()) ?? 0.0;
     }
 
-    // [추가] "801m" 같은 문자열을 double로 변환하는 내부 함수
     double? _parseDistance(dynamic value) {
       if (value == null || value is! String || value.isEmpty) {
         return null;
       }
-      // 'm', 'km' 등 단위와 공백을 모두 제거하고 숫자 부분만 추출
       final numericString = value.replaceAll(RegExp(r'[^0-9.]'), '');
       if (numericString.isEmpty) {
         return null;
@@ -49,14 +51,14 @@ class Store {
       name: json['name'] as String? ?? '',
       location: json['location'] as String? ?? '',
       menus: List<String>.from(json['menus'] ?? []),
-      displayedImg: json['image'] as String? ?? '',
+      displayedImg: json['image'] as String? ?? '', // [수정] API 응답에 맞춰 'displayedImg' -> 'image'로 변경
       likeSum: json['likeSum'] as int? ?? 0,
       locationCategory: json['locationCategory'] as String? ?? '',
       foodCategory: json['foodCategory'] as String? ?? '',
       lat: _parseCoordinate(json['lat']),
       lng: _parseCoordinate(json['lng']),
-      // [수정] 위에서 만든 _parseDistance 함수를 사용하여 거리 값을 파싱합니다.
       distance: _parseDistance(json['distance']),
+      popularMenu: json['popularMenu'] as String?, // [추가] JSON에서 popularMenu 파싱
     );
   }
 
@@ -72,6 +74,7 @@ class Store {
     double? lat,
     double? lng,
     double? distance,
+    String? popularMenu, // [추가] copyWith에 추가
   }) {
     return Store(
       id: id ?? this.id,
@@ -85,11 +88,12 @@ class Store {
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       distance: distance ?? this.distance,
+      popularMenu: popularMenu ?? this.popularMenu, // [추가] copyWith 로직에 추가
     );
   }
 
   @override
   String toString() {
-    return 'Store(id: $id, name: $name, lat: $lat, lng: $lng)';
+    return 'Store(id: $id, name: $name, lat: $lat, lng: $lng, popularMenu: $popularMenu)';
   }
 }
