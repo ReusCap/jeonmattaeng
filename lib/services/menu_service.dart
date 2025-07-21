@@ -30,6 +30,19 @@ class MenuService {
       rethrow;
     }
   }
+  // [추가] 유사 사용자 기반 추천 메뉴 불러오기
+  static Future<List<PopularMenu>> getSimilarUserRecommendations() async {
+    try {
+      final response = await DioClient.dio.get(ApiConfig.similarUserRecommend);
+      // API 응답이 리스트 형태이므로 바로 파싱합니다.
+      return (response.data as List)
+          .map((json) => PopularMenu.fromJson(json))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ 유사 사용자 추천 메뉴 불러오기 실패: $e');
+      rethrow; // 에러를 상위로 던져 UI단에서 처리
+    }
+  }
   /// 특정 가게의 모든 메뉴 목록 불러오기
   static Future<List<Menu>> getMenusByStore(String storeId) async {
     try {

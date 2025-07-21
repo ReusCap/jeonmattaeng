@@ -34,4 +34,6 @@ class ApiConfig {
 
   // --- Random Recommend ---
   static String recommendStore(String locationCategory) => '$_base/recommend/$locationCategory';
+  // [추가] 유사 사용자 추천 API 엔드포인트
+  static String get similarUserRecommend => '$_base/recommend/similarUserRecommend';
 }

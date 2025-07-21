@@ -20,11 +20,13 @@ class HomePageState extends State<HomePage> {
   String? _initialSearchQuery;
 
   late Future<List<PopularMenu>> _topMenusFuture;
+  late Future<List<PopularMenu>> _similarMenusFuture;
 
   @override
   void initState() {
     super.initState();
     _topMenusFuture = MenuService.getWeeklyTop3Menus();
+    _similarMenusFuture = MenuService.getSimilarUserRecommendations();
   }
 
   @override
@@ -80,6 +82,8 @@ class HomePageState extends State<HomePage> {
           const SizedBox(height: 24),
           _buildPopularMenusSection(),
           const SizedBox(height: 24),
+          _buildSimilarUserRecommendSection(),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -99,19 +103,16 @@ class HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(height: 16),
-        // [수정] 카드 높이에 맞춰 전체 리스트의 높이를 줄입니다.
         SizedBox(
           height: 120,
           child: FutureBuilder<List<PopularMenu>>(
             future: _topMenusFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(color: AppColors.primaryGreen));
+                return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
               }
               if (snapshot.hasError) {
-                return const Center(
-                    child: Text('메뉴를 불러올 수 없어요 😢', style: AppTextStyles.body16Regular));
+                return const Center(child: Text('메뉴를 불러올 수 없어요 😢', style: AppTextStyles.body16Regular));
               }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const Center(child: Text('인기 메뉴가 아직 없어요.', style: AppTextStyles.body16Regular));
@@ -123,7 +124,7 @@ class HomePageState extends State<HomePage> {
                 itemCount: menus.length,
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
                 itemBuilder: (context, index) {
-                  return _buildMenuItemCard(menus[index], index + 1);
+                  return _buildMenuItemCard(menus[index], rank: index + 1);
                 },
               );
             },
@@ -133,10 +134,54 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  // --- [수정] 공간 낭비를 줄이고, 이미지를 둥근 사각형으로 변경 ---
-  Widget _buildMenuItemCard(PopularMenu menu, int rank) {
+  Widget _buildSimilarUserRecommendSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              // [수정] 요청하신 제목으로 텍스트 변경
+              Text('나와 비슷한 사용자가 좋아하는 메뉴!', style: AppTextStyles.title20SemiBold),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 120,
+          child: FutureBuilder<List<PopularMenu>>(
+            future: _similarMenusFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
+              }
+              if (snapshot.hasError) {
+                return const SizedBox.shrink();
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              final menus = snapshot.data!;
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: menus.length,
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                itemBuilder: (context, index) {
+                  return _buildMenuItemCard(menus[index]);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuItemCard(PopularMenu menu, {int? rank}) {
     return Container(
-      width: 260, // 카드 너비 조정
+      width: 260,
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       child: Card(
         elevation: 2.5,
@@ -146,16 +191,14 @@ class HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
-              // 1. 왼쪽: 모서리가 둥근 사각 이미지와 랭킹 뱃지
               Stack(
                 children: [
-                  // [수정] ClipOval -> ClipRRect로 변경하여 둥근 사각형으로 만듭니다.
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12.0),
                     child: Image.network(
                       menu.displayedImg,
                       width: 88,
-                      height: double.infinity, // Row의 높이에 꽉 차게
+                      height: double.infinity,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
                           Container(
@@ -165,41 +208,37 @@ class HomePageState extends State<HomePage> {
                           ),
                     ),
                   ),
-                  Positioned(
-                    top: 6,
-                    left: 6,
-                    child: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: const Color(0xffE4BE25), // 골드 색상
-                      child: Text('$rank',
-                          style: AppTextStyles.button14Bold.copyWith(fontSize: 12, color: AppColors.white)),
+                  if (rank != null)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: const Color(0xffE4BE25),
+                        child: Text('$rank',
+                            style: AppTextStyles.button14Bold.copyWith(fontSize: 12, color: AppColors.white)),
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(width: 16),
-              // 2. 오른쪽: 메뉴 정보 (이름, 가게 정보, 하트)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  // [수정] Spacer 대신 MainAxisAlignment로 간격을 균등하게 배분하여 공간 낭비를 줄입니다.
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    // 메뉴 이름
                     Text(
                       menu.name,
                       style: AppTextStyles.subtitle18SemiBold.copyWith(color: AppColors.primaryGreen),
-                      maxLines: 2, // 이름이 길 경우 두 줄까지 표시
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    // 가게 위치 | 가게 이름
                     Text(
                       '${menu.locationCategory} | ${menu.storeName}',
                       style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    // 누적 하트
                     Row(
                       children: [
                         const Icon(Icons.favorite, color: AppColors.heartRed, size: 20),
@@ -219,10 +258,9 @@ class HomePageState extends State<HomePage> {
       ),
     );
   }
-  // --- UI 수정 끝 ---
 
+  // --- 이하 코드는 모두 동일합니다 ---
   Widget _buildTopHeader(BuildContext context) {
-    // ... 이하 코드는 모두 동일합니다 ...
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 30),
