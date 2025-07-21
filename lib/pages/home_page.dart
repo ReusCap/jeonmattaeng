@@ -5,6 +5,7 @@ import 'package:jeonmattaeng/pages/store_list_page.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
+import 'package:jeonmattaeng/services/location_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,6 +26,7 @@ class HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _requestInitialLocationPermission();
     _topMenusFuture = MenuService.getWeeklyTop3Menus();
     _similarMenusFuture = MenuService.getSimilarUserRecommendations();
   }
@@ -403,5 +405,17 @@ class HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+  Future<void> _requestInitialLocationPermission() async {
+    try {
+      // 이전에 만들어둔 LocationService의 함수를 호출합니다.
+      // 이 함수 안에 권한 요청 로직이 모두 들어있습니다.
+      await LocationService.getCurrentLocation();
+      debugPrint("초기 위치 권한 확인 및 요청 완료.");
+    } catch (e) {
+      // 사용자가 권한을 거부했거나, 위치 서비스가 꺼져있는 경우 등
+      // 여기서는 에러를 무시하고 넘어가도 괜찮습니다.
+      debugPrint("초기 위치 권한 요청 실패 또는 거부됨: $e");
+    }
   }
 }
