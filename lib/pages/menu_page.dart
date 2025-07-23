@@ -4,7 +4,6 @@ import 'package:jeonmattaeng/models/menu_model.dart';
 import 'package:jeonmattaeng/services/menu_service.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 import 'package:jeonmattaeng/theme/app_text_styles.dart';
-import 'package:jeonmattaeng/main.dart'; // routeObserver 사용을 위해 유지
 import 'package:jeonmattaeng/pages/review_page.dart';
 
 class MenuPage extends StatefulWidget {
@@ -31,12 +30,14 @@ class MenuPage extends StatefulWidget {
   State<MenuPage> createState() => _MenuPageState();
 }
 
-class _MenuPageState extends State<MenuPage> {
+class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
   late Future<List<Menu>> _menusFuture;
   List<Menu>? _menus;
   bool _didLikeChange = false;
   late int _storeLikeCount;
   bool _showPopup = true;
+
+  late final AnimationController _shimmerController;
 
   static const String fallbackImageAsset = 'assets/image/이미지없음표시.png';
 
@@ -45,13 +46,21 @@ class _MenuPageState extends State<MenuPage> {
     super.initState();
     _storeLikeCount = widget.storeLikeCount;
     _fetchMenus();
+
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) setState(() => _showPopup = false);
     });
+
+    _shimmerController = AnimationController.unbounded(vsync: this)
+      ..repeat(min: -0.5, max: 1.5, period: const Duration(milliseconds: 1200));
   }
 
-  // [개선] 기능은 그대로 두되, 불필요한 호출을 줄이기 위해 RouteAware는 제거했습니다.
-  // 이 함수는 재시도 버튼 등을 위해 계속 사용됩니다.
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
   void _fetchMenus() {
     setState(() {
       _menus = null;
@@ -97,7 +106,6 @@ class _MenuPageState extends State<MenuPage> {
     }
   }
 
-  // [복구] 리뷰 페이지 이동 함수 원상 복구
   void _navigateToReviewPage({required Menu menu, required int? rank}) async {
     final result = await Navigator.push<Menu>(
       context,
@@ -136,7 +144,6 @@ class _MenuPageState extends State<MenuPage> {
         backgroundColor: AppColors.white,
         body: Stack(
           children: [
-            // [UI 원본 유지] ScrollConfiguration은 원본 코드에 없었으므로 제거
             CustomScrollView(
               slivers: [
                 SliverAppBar(
@@ -168,17 +175,9 @@ class _MenuPageState extends State<MenuPage> {
                   future: _menusFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const SliverToBoxAdapter(
-                          child: Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(50.0),
-                                child: CircularProgressIndicator(),
-                              )));
+                      return _buildMenuPageSkeleton();
                     }
-                    // [개선] 에러가 발생했을 때 사용자 친화적인 UI를 보여줍니다.
                     if (snapshot.hasError) {
-                      // 원본 UI에는 Text 위젯만 있었지만, 에러 처리를 위해 Column과 Button을 추가합니다.
-                      // 이것은 UI '변경'이 아닌 에러 '처리'에 해당합니다.
                       return SliverToBoxAdapter(
                           child: Center(
                               child: Padding(
@@ -255,7 +254,73 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  // --- 이하 위젯 빌더 함수들은 보내주신 원본 코드와 100% 동일합니다. ---
+  Widget _buildMenuPageSkeleton() {
+    return SliverToBoxAdapter(
+      child: ShaderMask(
+        shaderCallback: (bounds) {
+          return LinearGradient(
+            colors: const [Color(0xFFE0E0E0), Color(0xFFF5F5F5), Color(0xFFE0E0E0)],
+            stops: const [0.0, 0.3, 0.6],
+            begin: const Alignment(-1.0, -0.3),
+            end: const Alignment(1.0, 0.3),
+            tileMode: TileMode.clamp,
+            transform: _SlidingGradientTransform(slidePercent: _shimmerController.value),
+          ).createShader(bounds);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: _SkeletonBox(width: 120, height: 24),
+            ),
+            SizedBox(
+              height: 190,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: 3,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      children: [
+                        // ✅ [수정] isCircle: true 속성 제거
+                        const _SkeletonBox(width: 100, height: 100),
+                        const SizedBox(height: 4),
+                        const _SkeletonBox(width: 60, height: 16),
+                        const SizedBox(height: 4),
+                        const _SkeletonBox(width: 80, height: 20),
+                        const SizedBox(height: 4),
+                        const _SkeletonBox(width: 40, height: 16),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: _SkeletonBox(width: 80, height: 24),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 5,
+              itemBuilder: (context, index) {
+                return const ListTile(
+                  // ✅ [수정] isCircle: true 속성 제거
+                  leading: _SkeletonBox(width: 50, height: 50),
+                  title: _SkeletonBox(width: double.infinity, height: 24),
+                  subtitle: _SkeletonBox(width: 100, height: 20),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildTopMenusSection(List<Menu> menus) {
     if (menus.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -466,12 +531,41 @@ class _StoreInfoDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-// 이 클래스는 원본 코드에 없었지만, ScrollConfiguration을 사용하셨다면 필요했을 것입니다.
-// 원본 코드에 없었으므로 이 클래스는 실제로는 필요 없습니다.
-class _NoGlowScrollBehavior extends ScrollBehavior {
+class _SkeletonBox extends StatelessWidget {
+  final double width;
+  final double height;
+  final bool isCircle;
+
+  const _SkeletonBox({
+    required this.width,
+    required this.height,
+    this.isCircle = false,
+  });
+
   @override
-  Widget buildOverscrollIndicator(
-      BuildContext context, Widget child, ScrollableDetails details) {
-    return child;
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.unclickGrey,
+        shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+        // ✅ isCircle이 false일 때 모서리를 둥글게 만듭니다.
+        borderRadius: isCircle ? null : BorderRadius.circular(8),
+      ),
+    );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  const _SlidingGradientTransform({
+    required this.slidePercent,
+  });
+
+  final double slidePercent;
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
   }
 }

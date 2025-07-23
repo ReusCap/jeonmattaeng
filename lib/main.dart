@@ -1,7 +1,5 @@
-// lib/main.dart (수정본)
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // ✅ SystemChrome을 위해 추가
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:jeonmattaeng/pages/home_page.dart';
@@ -11,19 +9,23 @@ import 'package:jeonmattaeng/pages/splash_page.dart';
 import 'package:jeonmattaeng/constants/routes.dart';
 import 'package:jeonmattaeng/theme/app_colors.dart';
 
+// ✅ 라우트 옵저버는 그대로 유지합니다.
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
+  // ✅ Flutter 엔진 초기화 보장
   WidgetsFlutterBinding.ensureInitialized();
+  // ✅ .env 파일 로드
   await dotenv.load(fileName: ".env");
 
+  // ✅ 카카오 SDK 초기화
   final kakaoKey = dotenv.env['KAKAO_NATIVE_APP_KEY'];
   if (kakaoKey == null) {
     throw Exception("KAKAO_NATIVE_APP_KEY not found in .env file");
   }
   KakaoSdk.init(nativeAppKey: kakaoKey);
 
-  // ✅ 화면 방향을 세로로 고정하는 코드
+  // ✅ 화면 방향 세로 고정
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -46,8 +48,8 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: AppColors.white,
           appBarTheme: const AppBarTheme(
             backgroundColor: AppColors.white,
-            foregroundColor: AppColors.white,
-            elevation: 0.5,
+            foregroundColor: AppColors.black, // AppBar 아이콘 색상 수정
+            elevation: 0,
           )
       ),
       initialRoute: AppRoutes.splash,
@@ -55,7 +57,8 @@ class MyApp extends StatelessWidget {
         AppRoutes.splash: (_) => const SplashPage(),
         AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.home: (_) => const HomePage(),
-        AppRoutes.main: (_) => const MainTabPage(),
+        // ✅ [수정] MainTabPage를 Provider를 제공하는 Wrapper로 교체
+        AppRoutes.main: (_) => const MainTabPageWrapper(),
       },
       navigatorObservers: [routeObserver],
     );

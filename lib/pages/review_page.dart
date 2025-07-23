@@ -1,4 +1,3 @@
-// lib/pages/review_page.dart (최종 통일본)
 import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -14,13 +13,13 @@ import 'package:jeonmattaeng/utils/secure_storage.dart';
 class ReviewPage extends StatefulWidget {
   final Menu menu;
   final String storeName;
-  final int? rank; // ✅ 1. 순위 정보를 받기 위한 변수 추가 (nullable)
+  final int? rank;
 
   const ReviewPage({
     super.key,
     required this.menu,
     required this.storeName,
-    this.rank, // ✅ 2. 생성자에 순위 변수 추가
+    this.rank,
   });
 
   @override
@@ -118,7 +117,6 @@ class _ReviewPageState extends State<ReviewPage> {
     }
   }
 
-  // 메뉴 정보 섹션 UI
   Widget _buildMenuInfoSection() {
     return SliverToBoxAdapter(
       child: Padding(
@@ -159,7 +157,6 @@ class _ReviewPageState extends State<ReviewPage> {
                     ),
                   ),
                 ),
-                // ✅ 3. rank 정보가 있을 때만 인기 순위 태그를 표시
                 if (widget.rank != null && widget.rank! > 0)
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
@@ -185,7 +182,6 @@ class _ReviewPageState extends State<ReviewPage> {
     );
   }
 
-  // 리뷰 입력창 UI
   Widget _buildReviewInputBar() {
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -211,7 +207,6 @@ class _ReviewPageState extends State<ReviewPage> {
     );
   }
 
-  // 이미지 캐싱 위젯
   Widget _buildCachedImage(String imageUrl) {
     const fallbackImageAsset = 'assets/image/이미지없음표시.png';
     if (imageUrl.isEmpty) {
@@ -313,9 +308,9 @@ class _ReviewPageState extends State<ReviewPage> {
                           final review = reviews[index];
                           final isMyReview =
                               myUserId != null && review.authorId == myUserId;
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 4),
+
+                          // ✅ [수정] ListTile을 커스텀 위젯으로 변경
+                          return InkWell(
                             onTap: () {
                               if (isMyReview) {
                                 showModalBottomSheet(
@@ -334,24 +329,55 @@ class _ReviewPageState extends State<ReviewPage> {
                                 );
                               }
                             },
-                            leading: CircleAvatar(
-                              backgroundImage:
-                              review.userProfileImage.isNotEmpty
-                                  ? CachedNetworkImageProvider(
-                                  review.userProfileImage)
-                                  : null,
-                              backgroundColor: AppColors.grey,
-                              child: review.userProfileImage.isEmpty
-                                  ? const Icon(Icons.person,
-                                  color: AppColors.white)
-                                  : null,
-                            ),
-                            title: Text(review.content),
-                            subtitle: Text(review.userNickname),
-                            trailing: Text(
-                              '${review.createdAt.month.toString().padLeft(2, '0')}/${review.createdAt.day.toString().padLeft(2, '0')} ${review.createdAt.hour.toString().padLeft(2, '0')}:${review.createdAt.minute.toString().padLeft(2, '0')}',
-                              style: AppTextStyles.caption14Medium
-                                  .copyWith(color: AppColors.grey),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // --- 1. 프로필 이미지와 닉네임 (왼쪽) ---
+                                  Column(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 22,
+                                        backgroundImage:
+                                        review.userProfileImage.isNotEmpty
+                                            ? CachedNetworkImageProvider(
+                                            review.userProfileImage)
+                                            : null,
+                                        backgroundColor: AppColors.grey,
+                                        child: review.userProfileImage.isEmpty
+                                            ? const Icon(Icons.person,
+                                            color: AppColors.white)
+                                            : null,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        review.userNickname,
+                                        style: AppTextStyles.caption14Medium.copyWith(color: AppColors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // --- 2. 리뷰 내용과 날짜 (오른쪽) ---
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          review.content,
+                                          style: AppTextStyles.body16Regular,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${review.createdAt.month.toString().padLeft(2, '0')}/${review.createdAt.day.toString().padLeft(2, '0')} ${review.createdAt.hour.toString().padLeft(2, '0')}:${review.createdAt.minute.toString().padLeft(2, '0')}',
+                                          style: AppTextStyles.caption14Medium
+                                              .copyWith(color: AppColors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },

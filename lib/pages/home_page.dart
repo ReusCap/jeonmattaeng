@@ -37,6 +37,7 @@ class HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // ✅ 외부(MainTabPage)에서 호출할 수 있는 리셋 메서드
   void reset() => _goBackToHome();
 
   void _goBackToHome() {
@@ -66,6 +67,7 @@ class HomePageState extends State<HomePage> {
       ),
       body: _selectedLocation == null
           ? _buildHomeContent()
+      // ✅ StoreListPage 호출 부분은 동일합니다.
           : StoreListPage(
         selectedLocation: _selectedLocation!,
         initialSearchQuery: _initialSearchQuery,
@@ -90,6 +92,8 @@ class HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  // ... 이하 _build 위젯들은 기존 코드와 동일합니다 ...
 
   Widget _buildPopularMenusSection() {
     return Column(
@@ -144,7 +148,6 @@ class HomePageState extends State<HomePage> {
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
             children: [
-              // [수정] 요청하신 제목으로 텍스트 변경
               Text('나와 비슷한 사용자가 좋아하는 메뉴!', style: AppTextStyles.title20SemiBold),
               Text('🍴', style: TextStyle(fontSize: 20)),
             ],
@@ -262,7 +265,6 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  // --- 이하 코드는 모두 동일합니다 ---
   Widget _buildTopHeader(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -305,6 +307,7 @@ class HomePageState extends State<HomePage> {
     return Transform.translate(
       offset: const Offset(0.0, -20.0),
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16), // ✅ 그림자가 잘리지 않도록 margin 추가
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
           color: AppColors.white,
@@ -406,15 +409,12 @@ class HomePageState extends State<HomePage> {
       ),
     );
   }
+
   Future<void> _requestInitialLocationPermission() async {
     try {
-      // 이전에 만들어둔 LocationService의 함수를 호출합니다.
-      // 이 함수 안에 권한 요청 로직이 모두 들어있습니다.
       await LocationService.getCurrentLocation();
       debugPrint("초기 위치 권한 확인 및 요청 완료.");
     } catch (e) {
-      // 사용자가 권한을 거부했거나, 위치 서비스가 꺼져있는 경우 등
-      // 여기서는 에러를 무시하고 넘어가도 괜찮습니다.
       debugPrint("초기 위치 권한 요청 실패 또는 거부됨: $e");
     }
   }

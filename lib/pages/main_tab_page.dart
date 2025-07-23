@@ -2,6 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:jeonmattaeng/pages/home_page.dart';
 import 'package:jeonmattaeng/pages/map_page.dart';
 import 'package:jeonmattaeng/pages/mypage.dart';
+import 'package:jeonmattaeng/providers/store_provider.dart';
+import 'package:provider/provider.dart';
+
+// ✅ [추가] Provider를 제공하기 위한 Wrapper 위젯
+// 이 위젯이 MainTabPage를 감싸면서 StoreProvider를 생성합니다.
+class MainTabPageWrapper extends StatelessWidget {
+  const MainTabPageWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => StoreProvider(),
+      child: const MainTabPage(),
+    );
+  }
+}
 
 class MainTabPage extends StatefulWidget {
   const MainTabPage({super.key});
@@ -12,33 +28,32 @@ class MainTabPage extends StatefulWidget {
 
 class _MainTabPageState extends State<MainTabPage> {
   int _selectedIndex = 0;
-
-  // 1. HomePage를 제어하기 위한 GlobalKey 생성
   final GlobalKey<HomePageState> _homeKey = GlobalKey();
-
-  // 2. 페이지 목록을 인스턴스 변수로 변경
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
-    // 3. 페이지 목록 초기화 시 HomePage에 Key를 할당
+
     _pages = <Widget>[
-      HomePage(key: _homeKey), // HomePage에 Key 전달
+      HomePage(key: _homeKey),
       const MapPage(),
       const MyPage(),
     ];
+
+    // ✅ [수정] 위젯이 빌드된 후, Provider를 통해 가게 데이터를 미리 불러옵니다.
+    // listen: false로 설정하여 불필요한 리빌드를 방지합니다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StoreProvider>().fetchStores();
+    });
   }
 
-  // 4. 탭을 눌렀을 때의 동작을 처리하는 함수
   void _onItemTapped(int index) {
-    // 만약 현재 '홈' 탭(인덱스 0)이 선택된 상태에서 '홈' 탭을 다시 눌렀다면
+    // 홈 탭을 다시 눌렀을 때 초기화하는 로직은 그대로 유지합니다.
     if (index == 0 && _selectedIndex == 0) {
-      // Key를 사용해 HomePage의 reset() 메소드를 호출하여 초기 화면으로 돌림
       _homeKey.currentState?.reset();
     }
 
-    // 선택된 탭의 인덱스를 변경하여 화면을 전환
     setState(() {
       _selectedIndex = index;
     });
@@ -47,6 +62,7 @@ class _MainTabPageState extends State<MainTabPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ IndexedStack을 사용하여 탭 전환 시 페이지 상태를 유지합니다.
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -61,7 +77,7 @@ class _MainTabPageState extends State<MainTabPage> {
           backgroundColor: Colors.white,
           elevation: 0,
           currentIndex: _selectedIndex,
-          onTap: _onItemTapped, // 5. 새로 만든 함수를 연결
+          onTap: _onItemTapped,
           selectedItemColor: Colors.redAccent,
           unselectedItemColor: Colors.grey,
           showSelectedLabels: true,
@@ -69,8 +85,7 @@ class _MainTabPageState extends State<MainTabPage> {
           type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.map_outlined), label: '지도'),
+            BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: '지도'),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: '마이페이지'),
           ],
         ),
