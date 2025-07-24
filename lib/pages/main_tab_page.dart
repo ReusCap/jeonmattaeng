@@ -68,7 +68,7 @@ class _MainTabPageState extends State<MainTabPage> {
         children: _pages,
       ),
       bottomNavigationBar: Container(
-        height: 110.0, // ✅ 원하는 높이로 설정 (기본값은 보통 56.0)
+        height: 90.0,
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(color: Colors.grey[300]!, width: 0.5),
