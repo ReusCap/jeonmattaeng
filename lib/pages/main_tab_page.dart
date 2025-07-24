@@ -41,15 +41,16 @@ class _MainTabPageState extends State<MainTabPage> {
       const MyPage(),
     ];
 
-    // ✅ [수정] 위젯이 빌드된 후, Provider를 통해 가게 데이터를 미리 불러옵니다.
-    // listen: false로 설정하여 불필요한 리빌드를 방지합니다.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<StoreProvider>().fetchStores();
+    // ✅ 변경된 부분: allStores가 비었을 때만 fetchStores() 호출
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final provider = context.read<StoreProvider>();
+      if (provider.allStores.isEmpty) {
+        await provider.fetchStores();
+      }
     });
   }
 
   void _onItemTapped(int index) {
-    // 홈 탭을 다시 눌렀을 때 초기화하는 로직은 그대로 유지합니다.
     if (index == 0 && _selectedIndex == 0) {
       _homeKey.currentState?.reset();
     }
@@ -62,12 +63,12 @@ class _MainTabPageState extends State<MainTabPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ IndexedStack을 사용하여 탭 전환 시 페이지 상태를 유지합니다.
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
       bottomNavigationBar: Container(
+        height: 110.0, // ✅ 원하는 높이로 설정 (기본값은 보통 56.0)
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(color: Colors.grey[300]!, width: 0.5),

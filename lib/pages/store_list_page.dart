@@ -32,6 +32,10 @@ class _StoreListPageState extends State<StoreListPage> {
       final provider = context.read<StoreProvider>();
       provider.selectLocation(widget.selectedLocation);
       provider.updateSearchQuery(widget.initialSearchQuery ?? '');
+      // ✅ await 없이 중복 방지
+      if (provider.allStores.isEmpty) {
+        provider.fetchStores();
+      }
     });
   }
 
